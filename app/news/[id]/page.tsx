@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { news } from "../../../data/news";
+
+import Badge from "../../../components/Badge";
+import Section from "../../../components/Section";
+import { getArticle } from "../../../services/api";
 
 type NewsPageProps = {
   params: Promise<{
@@ -11,24 +14,28 @@ type NewsPageProps = {
 export default async function NewsPage({ params }: NewsPageProps) {
   const { id } = await params;
 
-  const article = news.find((item) => item.id === id);
+  let article;
 
-  if (!article) {
+  try {
+    article = await getArticle(id);
+  } catch {
     notFound();
   }
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 pb-24 pt-16">
       <article className="mx-auto w-full max-w-3xl">
+        {/* Back Button */}
         <Link
           href="/"
           className="inline-flex items-center text-sm font-semibold text-gray-600 transition-colors hover:text-gray-900"
         >
-          ← Back to today&apos;s brief
+          ← Back to Today's Brief
         </Link>
 
+        {/* Header */}
         <header className="mt-12 border-b border-gray-200 pb-10">
-          <p className="text-sm font-semibold uppercase tracking-widest text-gray-500">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">
             AI Engineer Daily
           </p>
 
@@ -45,32 +52,61 @@ export default async function NewsPage({ params }: NewsPageProps) {
           </p>
         </header>
 
-        <section className="mt-12">
-          <h2 className="text-2xl font-semibold tracking-tight text-gray-900">
-            Article
-          </h2>
-
-          <p className="mt-5 text-lg leading-8 text-gray-700">
+        {/* Article */}
+        <Section title="Article">
+          <p className="text-lg leading-8 text-gray-700">
             {article.content}
           </p>
-        </section>
+        </Section>
 
-        <section className="mt-12 rounded-3xl bg-white p-8 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-widest text-gray-500">
-            Takeaway
+        {/* Takeaway */}
+        <Section title="Takeaway">
+          <div className="rounded-3xl bg-white p-8 shadow-sm">
+            <p className="text-xl font-medium leading-8 text-gray-900">
+              {article.takeaway}
+            </p>
+          </div>
+        </Section>
+
+        {/* Concepts */}
+        <Section title="Concepts">
+          <div className="flex flex-wrap gap-3">
+            {article.concepts.map((concept) => (
+              <Badge key={concept} text={concept} />
+            ))}
+          </div>
+        </Section>
+
+        {/* Background */}
+        <Section title="Background">
+          <p className="text-lg leading-8 text-gray-700">
+            {article.background}
           </p>
+        </Section>
 
-          <p className="mt-4 text-xl font-medium leading-8 text-gray-900">
-            {article.takeaway}
-          </p>
-        </section>
+        {/* Related News */}
+        <Section title="Related News">
+          <div className="space-y-4">
+            {article.relatedNews.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-2xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:shadow-md"
+              >
+                <p className="font-semibold text-gray-900">
+                  {item.title}
+                </p>
 
-        <section className="mt-12 border-t border-gray-200 pt-10">
-          <h2 className="text-2xl font-semibold tracking-tight text-gray-900">
-            Sources
-          </h2>
+                <p className="mt-2 text-sm text-gray-500">
+                  Coming soon
+                </p>
+              </div>
+            ))}
+          </div>
+        </Section>
 
-          <ul className="mt-5 space-y-3">
+        {/* Sources */}
+        <Section title="Sources">
+          <ul className="space-y-3">
             {article.sources.map((source) => (
               <li key={source.url}>
                 <a
@@ -80,12 +116,15 @@ export default async function NewsPage({ params }: NewsPageProps) {
                   className="inline-flex items-center font-medium text-gray-700 transition-colors hover:text-gray-900 hover:underline"
                 >
                   {source.name}
-                  <span className="ml-2">↗</span>
+
+                  <span className="ml-2">
+                    ↗
+                  </span>
                 </a>
               </li>
             ))}
           </ul>
-        </section>
+        </Section>
       </article>
     </main>
   );

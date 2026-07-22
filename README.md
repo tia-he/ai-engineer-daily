@@ -13,6 +13,9 @@ Each story includes:
 - AI-generated summary
 - Full article
 - Key takeaway
+- Technical concepts
+- Background knowledge
+- Related news
 - Trusted sources
 
 The long-term goal is to help engineers stay current in just a few minutes every day.
@@ -26,6 +29,7 @@ The long-term goal is to help engineers stay current in just a few minutes every
 - Next.js
 - React
 - Tailwind CSS
+- TypeScript
 
 ### Backend (Planned)
 
@@ -40,24 +44,55 @@ The long-term goal is to help engineers stay current in just a few minutes every
 
 ## Current Features
 
-- Homepage
+### Homepage
+
 - Daily Brief
-- News Detail Page
+- Apple-inspired layout
+- Responsive design
+
+### Article Page
+
+- Summary
+- Full article
 - Takeaway
+- Concepts
+- Background
+- Related News
 - Sources
-- Apple-inspired Design System
+
+### Project
+
+- Design System
+- Product Roadmap
+- Decision Log
 
 ---
 
 ## Roadmap
 
-- Concepts
-- Related News
-- Background
-- Search
-- AI-generated summaries
-- RSS ingestion
-- Personalized recommendations
+### Phase 1 — MVP
+
+- [x] Homepage
+- [x] News Detail
+- [x] Takeaway
+- [x] Concepts
+- [x] Background
+- [x] Related News
+- [x] Sources
+
+### Phase 2
+
+- [ ] Search
+- [ ] AI-generated summaries
+- [ ] RSS ingestion
+- [ ] Personalized recommendations
+
+### Phase 3
+
+- [ ] FastAPI backend
+- [ ] PostgreSQL
+- [ ] OpenAI integration
+- [ ] Authentication
 
 ---
 
@@ -75,12 +110,16 @@ ROADMAP.md
 
 ---
 
-## Screenshots
+## Design Philosophy
 
-(Coming Soon)
+AI Engineer Daily is inspired by Apple's simplicity, OpenAI's clarity, and Linear's information hierarchy.
+
+The goal is not to replicate their interfaces, but to create a focused reading experience that helps engineers understand AI rather than simply consume news.
 
 ---
 
 ## Status
 
-🚧 MVP under active development.
+🚧 Sprint 2 completed.
+
+Static frontend MVP with a complete article reading experience.
