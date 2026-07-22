@@ -1,6 +1,6 @@
 # AI Engineer Daily
 
-An AI-powered daily briefing platform that helps software engineers stay up to date with AI and software engineering.
+An AI-powered daily briefing platform built with Next.js, FastAPI, and SQLAlchemy to help software engineers stay up to date with AI in just a few minutes a day.
 
 ---
 
@@ -31,68 +31,61 @@ The long-term goal is to help engineers stay current in just a few minutes every
 - Tailwind CSS
 - TypeScript
 
-### Backend (Planned)
+### Backend
 
 - FastAPI
-- PostgreSQL
+- SQLAlchemy
+- SQLite
 
-### AI
+### AI (Planned)
 
 - OpenAI API
 
+### Database (Future Upgrade)
+
+- PostgreSQL
 ---
 
 ## Current Features
 
-### Homepage
-
+- Homepage
 - Daily Brief
-- Apple-inspired layout
-- Responsive design
-
-### Article Page
-
-- Summary
-- Full article
-- Takeaway
+- News Detail Page
+- AI Takeaways
 - Concepts
 - Background
 - Related News
 - Sources
-
-### Project
-
-- Design System
-- Product Roadmap
-- Decision Log
+- RESTful API
+- SQLite Database
+- SQLAlchemy ORM
+- Pydantic API Schemas
+- Apple-inspired Design System
 
 ---
 
-## Roadmap
+## Architecture
 
-### Phase 1 — MVP
-
-- [x] Homepage
-- [x] News Detail
-- [x] Takeaway
-- [x] Concepts
-- [x] Background
-- [x] Related News
-- [x] Sources
-
-### Phase 2
-
-- [ ] Search
-- [ ] AI-generated summaries
-- [ ] RSS ingestion
-- [ ] Personalized recommendations
-
-### Phase 3
-
-- [ ] FastAPI backend
-- [ ] PostgreSQL
-- [ ] OpenAI integration
-- [ ] Authentication
+```text
+     Browser
+        │
+        ▼
+ Next.js Frontend
+        │
+    REST API
+        │
+        ▼
+ FastAPI Backend
+        │
+        ▼
+   CRUD Layer
+        │
+        ▼
+  SQLAlchemy ORM
+        │
+        ▼
+ SQLite Database
+```
 
 ---
 
@@ -101,14 +94,53 @@ The long-term goal is to help engineers stay current in just a few minutes every
 ```text
 app/
 components/
-data/
+services/
+types/
 
-DESIGN.md
-DECISIONS.md
-ROADMAP.md
+backend/
+├── app/
+│   └── news.py
+├── config.py
+├── crud.py
+├── database.py
+├── models.py
+├── schemas.py
+├── init_db.py
+├── test_db.py
+├── main.py
 ```
 
 ---
+
+
+## Roadmap
+
+### Completed
+
+- ✅ Next.js frontend
+- ✅ FastAPI backend
+- ✅ REST API
+- ✅ SQLite integration
+- ✅ SQLAlchemy ORM
+- ✅ Pydantic schemas
+
+### In Progress
+
+- RSS ingestion
+- AI-generated summaries
+- AI-generated takeaways
+- Background knowledge generation
+
+### Future
+
+- PostgreSQL
+- Search
+- Personalized recommendations
+- User accounts
+- Deployment
+
+---
+
 
 ## Design Philosophy
 
@@ -120,6 +152,15 @@ The goal is not to replicate their interfaces, but to create a focused reading e
 
 ## Status
 
-🚧 Sprint 2 completed.
+🚧 Active Development
 
-Static frontend MVP with a complete article reading experience.
+The project now includes a complete frontend-backend architecture with:
+
+- Next.js frontend
+- FastAPI backend
+- RESTful API
+- SQLite database
+- SQLAlchemy ORM
+- Pydantic schemas
+
+RSS ingestion and AI-generated summaries are currently under development.
