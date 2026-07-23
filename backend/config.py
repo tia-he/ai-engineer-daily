@@ -7,3 +7,23 @@ BASE_DIR = Path(__file__).resolve().parent
 DATABASE_PATH = BASE_DIR / "news.db"
 
 DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+
+# RSS 新闻源列表
+RSS_FEEDS = [
+    {
+        "name": "OpenAI",
+        "url": "https://openai.com/news/rss.xml",
+    },
+    {
+        "name": "Anthropic",
+        "url": "https://www.anthropic.com/news/rss.xml",
+    },
+    {
+        "name": "Google AI",
+        "url": "https://blog.google/technology/ai/rss/",
+    },
+    {
+        "name": "Hugging Face",
+        "url": "https://huggingface.co/blog/feed.xml",
+    },
+]

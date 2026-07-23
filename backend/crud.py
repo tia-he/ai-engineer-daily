@@ -27,3 +27,22 @@ def get_article(db: Session, article_id: str) -> dict | None:
         return None
 
     return article.to_dict()
+
+
+def create_article(db: Session, article_data: dict) -> bool:
+    """
+    插入一篇新文章。
+
+    如果该 id 已存在（例如 RSS 重复抓取到同一篇文章），则跳过并返回 False。
+    """
+    existing = db.get(Article, article_data["id"])
+
+    if existing is not None:
+        return False
+
+    article = Article(**article_data)
+
+    db.add(article)
+    db.commit()
+
+    return True

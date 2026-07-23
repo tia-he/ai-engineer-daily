@@ -6,19 +6,92 @@ An AI-powered daily briefing platform built with Next.js, FastAPI, and SQLAlchem
 
 ## Overview
 
-AI Engineer Daily delivers a concise daily briefing instead of overwhelming users with dozens of news articles.
+Instead of manually browsing dozens of AI blogs every day, AI Engineer Daily automatically ingests articles from trusted AI organizations, stores them in a database, and serves them through a REST API.
 
-Each story includes:
+The current version focuses on building a production-style data pipeline:
 
-- AI-generated summary
-- Full article
-- Key takeaway
-- Technical concepts
-- Background knowledge
-- Related news
-- Trusted sources
+- Collect articles from RSS feeds
+- Store them in a relational database
+- Expose them through a FastAPI backend
+- Display them with a modern Next.js frontend
 
-The long-term goal is to help engineers stay current in just a few minutes every day.
+Future versions will enrich every article using OpenAI.
+
+---
+
+## Architecture
+
+```text
+Internet (RSS)
+
+        │
+
+        ▼
+
+ RSS Ingestion
+
+        │
+
+        ▼
+
+SQLite Database
+
+        │
+
+        ▼
+
+ SQLAlchemy ORM
+
+        │
+
+        ▼
+
+ FastAPI REST API
+
+        │
+
+        ▼
+
+ Next.js Frontend
+```
+
+---
+
+## Current Features
+
+### Data Pipeline
+
+- Automatic RSS ingestion from major AI organizations
+- Duplicate detection using stable article IDs
+- SQLAlchemy ORM with SQLite persistence
+- FastAPI REST API
+
+### Frontend
+
+- Apple-inspired responsive UI
+- Homepage with latest articles
+- Individual news detail pages
+- Reusable React components
+
+### Backend
+
+- Layered architecture
+- CRUD abstraction
+- SQLAlchemy ORM
+- Pydantic schemas
+- RESTful API
+
+---
+
+## RSS Sources
+
+Current RSS feeds include:
+
+- OpenAI
+- Google AI
+- Hugging Face
+
+(The Anthropic RSS feed is currently unavailable.)
 
 ---
 
@@ -28,8 +101,8 @@ The long-term goal is to help engineers stay current in just a few minutes every
 
 - Next.js
 - React
-- Tailwind CSS
 - TypeScript
+- Tailwind CSS
 
 ### Backend
 
@@ -92,7 +165,19 @@ The long-term goal is to help engineers stay current in just a few minutes every
 ## Project Structure
 
 ```text
-app/
+app/                 # Next.js frontend
+
+backend/
+├── app/             # FastAPI routers
+├── config.py
+├── crud.py
+├── database.py
+├── ingest_rss.py    # RSS ingestion
+├── init_db.py       # Development seed data
+├── models.py
+├── schemas.py
+└── main.py
+
 components/
 services/
 types/
