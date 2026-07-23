@@ -1,6 +1,7 @@
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from config import DATABASE_URL
 from database import Base, engine
 from models import Article
 
@@ -138,7 +139,7 @@ def initialize_database() -> None:
         db.commit()
 
     print("Database initialized successfully.")
-    print("Database location: backend/news.db")
+    print(f"Database URL: {DATABASE_URL}")
     print(f"Inserted {len(SEED_ARTICLES)} articles.")
 
 

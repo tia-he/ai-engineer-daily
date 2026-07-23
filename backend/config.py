@@ -1,13 +1,11 @@
 import os
-from pathlib import Path
 
-# backend 文件夹
-BASE_DIR = Path(__file__).resolve().parent
-
-# 数据库位置
-DATABASE_PATH = BASE_DIR / "news.db"
-
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+# 数据库连接地址，唯一的配置来源。
+# 本地开发默认连接本机 PostgreSQL；生产环境通过环境变量覆盖。
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql+psycopg://postgres:postgres@localhost:5432/ai_engineer_daily",
+)
 
 # RSS 新闻源列表
 RSS_FEEDS = [
