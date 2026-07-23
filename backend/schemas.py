@@ -25,3 +25,7 @@ class Article(BaseModel):
     relatedNews: list[RelatedNews]
 
     sources: list[Source]
+
+
+class SearchResult(Article):
+    matchedIn: list[str]

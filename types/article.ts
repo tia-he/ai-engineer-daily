@@ -27,3 +27,7 @@ export interface Article {
 
   sources: Source[];
 }
+
+export interface SearchResult extends Article {
+  matchedIn: string[];
+}

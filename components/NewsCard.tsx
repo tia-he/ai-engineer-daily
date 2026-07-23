@@ -1,10 +1,13 @@
 import Link from "next/link";
 
+import Badge from "./Badge";
+
 type NewsCardProps = {
   id: string;
   number: number;
   title: string;
   summary: string;
+  matchedIn?: string[];
 };
 
 export default function NewsCard({
@@ -12,6 +15,7 @@ export default function NewsCard({
   number,
   title,
   summary,
+  matchedIn,
 }: NewsCardProps) {
   return (
     <Link
@@ -31,6 +35,14 @@ export default function NewsCard({
           <p className="mt-3 text-base leading-7 text-gray-600">
             {summary}
           </p>
+
+          {matchedIn && matchedIn.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {matchedIn.map((field) => (
+                <Badge key={field} text={`Matched in ${field}`} />
+              ))}
+            </div>
+          )}
 
           <p className="mt-5 text-sm font-semibold text-gray-900">
             Read article

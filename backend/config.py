@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 # backend 文件夹
@@ -27,3 +28,6 @@ RSS_FEEDS = [
         "url": "https://huggingface.co/blog/feed.xml",
     },
 ]
+
+# 生成 AI 元数据使用的 OpenAI 模型，可以通过环境变量覆盖
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")

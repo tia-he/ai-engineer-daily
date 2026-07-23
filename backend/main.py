@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.news import router as news_router
+from app.search import router as search_router
 from database import Base, engine
 
 
@@ -16,6 +17,7 @@ app = FastAPI(
 
 
 app.include_router(news_router)
+app.include_router(search_router)
 
 
 @app.get("/")
