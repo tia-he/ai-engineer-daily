@@ -4,6 +4,15 @@ An AI-powered daily briefing platform built with Next.js, FastAPI, and SQLAlchem
 
 ---
 
+## Live Demo
+
+- Frontend: `<your Vercel URL>` (e.g. `https://ai-engineer-daily.vercel.app`)
+- Backend API: `<your Render URL>` (e.g. `https://ai-engineer-daily-api.onrender.com`)
+
+> Fill these in after completing [Production Setup](#production-setup) below. The backend runs on Render's free tier, so the first request after a period of inactivity can take 30-50s while the instance wakes up.
+
+---
+
 ## Overview
 
 Instead of manually browsing dozens of AI blogs every day, AI Engineer Daily automatically ingests articles from trusted AI organizations, stores them in a database, and serves them through a REST API.
@@ -214,13 +223,22 @@ createdb ai_engineer_daily
 
 ### 2. Required environment variables
 
+**Backend** (`backend/.env.example`):
+
 | Variable          | Required | Purpose                                                        | Default (if unset)                                                        |
 | ----------------- | -------- | --------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `DATABASE_URL`    | No       | Full SQLAlchemy connection string — the single source of truth for which database the app uses | `postgresql+psycopg://postgres:postgres@localhost:5432/ai_engineer_daily` |
 | `OPENAI_API_KEY`  | Yes, for AI generation | Used by `generate_ai.py` to call the OpenAI API                | none — required, no default                                               |
 | `OPENAI_MODEL`    | No       | Overrides the OpenAI model used for AI metadata generation      | `gpt-4o-mini`                                                              |
+| `ALLOWED_ORIGINS` | No       | Comma-separated list of origins allowed to call the API (CORS) | `http://localhost:3000`                                                    |
 
-No credentials are hardcoded anywhere in the codebase — everything comes from the environment.
+**Frontend** (`.env.example`, repo root):
+
+| Variable                     | Required | Purpose                                                                                   | Default (if unset)      |
+| ----------------------------- | -------- | ------------------------------------------------------------------------------------------ | ------------------------ |
+| `NEXT_PUBLIC_API_BASE_URL`    | No       | Base URL of the FastAPI backend, used for server-side fetches and the `/api/search` proxy | `http://127.0.0.1:8000` |
+
+No credentials are hardcoded anywhere in the codebase — everything comes from the environment. For the frontend, copy `.env.example` → `.env.local` (Next.js loads it automatically, already git-ignored). The backend has no dotenv loader by design (keeps the dependency list minimal) — use `backend/.env.example` as a reference and `export` the variables in your shell, as shown below.
 
 ### 3. Local development setup
 
@@ -264,6 +282,90 @@ uvicorn main:app --reload
 
 ---
 
+## Deployment Architecture
+
+```text
+GitHub repo (this monorepo)
+   │
+   ├─ Vercel          → Next.js frontend (build + deploy on push to main)
+   │
+   ├─ Render          → FastAPI backend (Web Service, uvicorn)
+   │
+   ├─ Neon            → managed PostgreSQL (free tier)
+   │
+   └─ GitHub Actions   → scheduled workflow: ingest_rss.py + generate_ai.py
+                          (cron, against production DATABASE_URL / OPENAI_API_KEY)
+```
+
+| Layer | Choice | Why |
+|---|---|---|
+| Frontend | [Vercel](https://vercel.com) | Zero-config Next.js hosting with a generous free tier, automatic HTTPS/CDN, and a verified deployment adapter for this Next.js version. |
+| Backend | [Render](https://render.com) (free Web Service) | Deploys the existing `uvicorn` process straight from GitHub, no Dockerfile needed. Free tier; automatic HTTPS. Free instances sleep after 15 minutes of inactivity, so the first request afterward takes ~30-50s to wake up — acceptable for an MVP, see [Limitations](#limitations). |
+| Database | [Neon](https://neon.tech) | Serverless PostgreSQL with a generous free tier. Standard `postgresql://` wire protocol, so it works with the existing `psycopg` + SQLAlchemy setup unmodified — just a `DATABASE_URL`. |
+| Scheduled ingestion / AI generation | GitHub Actions (`.github/workflows/ingest.yml`) | `ingest_rss.py` and `generate_ai.py` are scripts, not API endpoints. A scheduled Actions workflow (free) runs them against the production database on a cron schedule instead of standing up a separate cron service. |
+
+This keeps the original architecture (`RSS → PostgreSQL → SQLAlchemy → FastAPI → Next.js`) completely unchanged — deployment is purely a matter of *where* each piece runs and how it's configured, not a redesign.
+
+---
+
+## Production Setup
+
+Set these up in order — each step's output feeds the next.
+
+### 1. Database (Neon)
+
+1. Create a free project at [neon.tech](https://neon.tech).
+2. Copy the connection string it gives you (it already includes `?sslmode=require`). This is your production `DATABASE_URL`.
+
+### 2. Backend (Render)
+
+1. Push this repo to GitHub (if you haven't already).
+2. In the Render dashboard, choose **New → Blueprint** and point it at this repo — it will read `render.yaml` at the repo root and create the API service with the correct build/start commands automatically.
+3. In the service's **Environment** tab, set:
+   - `DATABASE_URL` — the Neon connection string from step 1
+   - `OPENAI_API_KEY` — your OpenAI API key
+   - `OPENAI_MODEL` — optional, defaults to `gpt-4o-mini`
+   - `ALLOWED_ORIGINS` — your Vercel frontend URL (set after step 3; you can update this later)
+4. Deploy. Note the public URL Render gives you (e.g. `https://ai-engineer-daily-api.onrender.com`) — this is your production backend URL.
+5. Seed the production database once, from your machine, pointed at the Neon `DATABASE_URL`:
+   ```bash
+   cd backend
+   export DATABASE_URL="<your Neon connection string>"
+   export OPENAI_API_KEY="<your OpenAI key>"
+   python ingest_rss.py
+   python generate_ai.py
+   ```
+   Do **not** run `init_db.py` against production — it inserts development seed articles.
+
+### 3. Frontend (Vercel)
+
+1. Import this repo into [Vercel](https://vercel.com/new).
+2. Set the environment variable `NEXT_PUBLIC_API_BASE_URL` to your Render backend URL from step 2.
+3. Deploy. Note the public URL Vercel gives you (e.g. `https://ai-engineer-daily.vercel.app`).
+4. Go back to Render and update `ALLOWED_ORIGINS` to this Vercel URL, then redeploy the backend so CORS allows requests from it.
+
+### 4. Scheduled ingestion (GitHub Actions)
+
+1. In the GitHub repo, go to **Settings → Secrets and variables → Actions**.
+2. Add repository secrets: `DATABASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL` (same values as the Render service).
+3. The `.github/workflows/ingest.yml` workflow runs every 6 hours automatically, and can also be triggered manually from the **Actions** tab (`workflow_dispatch`).
+
+### 5. Fill in the Live Demo links
+
+Update the [Live Demo](#live-demo) section above with your Vercel and Render URLs.
+
+---
+
+## Limitations
+
+- **Cold starts**: Render's free tier sleeps the backend after 15 minutes of inactivity; the first request afterward can take 30-50s. Upgrading to a paid Render instance removes this.
+- **No migrations tooling**: tables are created via `Base.metadata.create_all`, which is fine for the current schema but doesn't handle future schema changes — a migration tool (e.g. Alembic) would be needed before altering `models.py` in production.
+- **`init_db.py` is dev-only**: it inserts fixed seed articles and must never be run against the production database.
+- **Ingestion cadence**: the GitHub Actions cron runs every 6 hours, not in real time — acceptable for a daily-briefing product, but news can lag by up to that window.
+- **Single environment**: there's no separate staging deployment; testing happens locally against a local or scratch Postgres database before pushing to `main`.
+
+---
+
 
 ## Roadmap
 
@@ -278,12 +380,12 @@ uvicorn main:app --reload
 - ✅ AI-generated summaries, takeaways, concepts, and background
 - ✅ Article search
 - ✅ PostgreSQL
+- ✅ Deployment
 
 ### Future
 
 - Personalized recommendations
 - User accounts
-- Deployment
 
 ---
 

@@ -1,7 +1,9 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.news import router as news_router
 from app.search import router as search_router
+from config import ALLOWED_ORIGINS
 from database import Base, engine
 
 
@@ -13,6 +15,14 @@ app = FastAPI(
     title="AI Engineer Daily API",
     description="Backend API for AI Engineer Daily.",
     version="1.0.0",
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 

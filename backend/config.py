@@ -29,3 +29,10 @@ RSS_FEEDS = [
 
 # 生成 AI 元数据使用的 OpenAI 模型，可以通过环境变量覆盖
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+
+# 允许跨域访问 API 的前端域名列表（逗号分隔），生产环境通过环境变量覆盖
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    if origin.strip()
+]
