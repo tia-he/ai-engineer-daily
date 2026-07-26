@@ -48,11 +48,18 @@ def create_article(db: Session, article_data: dict) -> bool:
     return True
 
 
-def get_articles_pending_ai(db: Session) -> list[dict]:
+def get_articles_pending_ai(db: Session, limit: int) -> list[dict]:
     """
-    查询尚未生成 AI 元数据的文章（takeaway 字段为空）。
+    查询尚未生成 AI 元数据的文章（takeaway 字段为空），最多取 limit 篇。
+
+    这里没有 order_by：Article 目前没有 published_at 之类的时间戳字段，
+    而 id 是 md5(link) 的哈希值，和发布时间没有任何关系，用它排序只会
+    制造出一种"按新旧排列"的假象。所以现在这里返回的是数据库当前顺序下
+    任意一批（最多 limit 篇）待处理文章，不代表"最新"或"最旧"。
+    如果未来给 Article 加上 published_at 字段，应该在这里改成按
+    published_at 降序排序，让 --limit 真正筛选出最新发布的文章。
     """
-    statement = select(Article).where(Article.takeaway == "")
+    statement = select(Article).where(Article.takeaway == "").limit(limit)
 
     articles = db.scalars(statement).all()
 
