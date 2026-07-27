@@ -90,9 +90,7 @@ def ingest_all_feeds() -> None:
         for feed in RSS_FEEDS:
             inserted, skipped = ingest_feed(db, feed)
 
-            logger.info(
-                "%s: inserted %d, skipped %d", feed["name"], inserted, skipped
-            )
+            logger.info("%s: inserted %d, skipped %d", feed["name"], inserted, skipped)
 
             total_inserted += inserted
             total_skipped += skipped

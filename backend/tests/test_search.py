@@ -75,9 +75,7 @@ def test_search_no_match_returns_empty_list(client, db_session):
 
 
 def test_search_background_is_not_searched(client, db_session):
-    create_article(
-        db_session, make_article("a1", background="unique-background-term")
-    )
+    create_article(db_session, make_article("a1", background="unique-background-term"))
 
     response = client.get("/search", params={"q": "unique-background-term"})
 

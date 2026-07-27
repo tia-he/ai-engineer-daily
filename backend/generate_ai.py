@@ -48,9 +48,7 @@ def generate_all(limit: int = 100) -> None:
             logger.info("No pending articles found. Nothing to generate.")
             return
 
-        logger.info(
-            "Found %d articles pending AI generation.", len(pending_articles)
-        )
+        logger.info("Found %d articles pending AI generation.", len(pending_articles))
 
         generated = 0
         failed = 0

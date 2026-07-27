@@ -5,14 +5,11 @@ from config import DATABASE_URL
 from database import engine
 from models import Article
 
-
 SEED_ARTICLES = [
     {
         "id": "openai-coding-model",
         "title": "OpenAI Releases New Coding Model",
-        "summary": (
-            "A new model optimized for software engineering tasks."
-        ),
+        "summary": ("A new model optimized for software engineering tasks."),
         "content": (
             "OpenAI introduced a new coding model with stronger "
             "repository-level reasoning and software engineering "
@@ -48,9 +45,7 @@ SEED_ARTICLES = [
     {
         "id": "google-mcp-sdk",
         "title": "Google Launches MCP SDK",
-        "summary": (
-            "Google announces a new SDK supporting MCP."
-        ),
+        "summary": ("Google announces a new SDK supporting MCP."),
         "content": (
             "Google launches a new SDK supporting the Model Context "
             "Protocol, making it easier for developers to connect AI "
@@ -81,9 +76,7 @@ SEED_ARTICLES = [
     {
         "id": "cursor-agent",
         "title": "Cursor Launches AI Coding Agent",
-        "summary": (
-            "Cursor adds a new AI coding agent."
-        ),
+        "summary": ("Cursor adds a new AI coding agent."),
         "content": (
             "Cursor introduces an AI coding agent capable of "
             "understanding project context and completing more complex "
@@ -130,10 +123,7 @@ def initialize_database() -> None:
         # 每次初始化时先清空旧数据，避免重复插入。
         db.execute(delete(Article))
 
-        articles = [
-            Article(**article_data)
-            for article_data in SEED_ARTICLES
-        ]
+        articles = [Article(**article_data) for article_data in SEED_ARTICLES]
 
         db.add_all(articles)
         db.commit()

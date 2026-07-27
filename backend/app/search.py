@@ -1,11 +1,9 @@
-from schemas import SearchResult
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 import crud
 from database import get_db
-
+from schemas import SearchResult
 
 router = APIRouter(
     prefix="/search",

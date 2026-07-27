@@ -55,6 +55,4 @@ app.include_router(search_router)
 
 @app.get("/")
 def read_root():
-    return {
-        "message": "AI Engineer Daily API is running."
-    }
+    return {"message": "AI Engineer Daily API is running."}

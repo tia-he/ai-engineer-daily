@@ -41,7 +41,9 @@ def test_get_articles_pending_ai_only_returns_empty_takeaway(db_session):
 
 def test_get_articles_pending_ai_respects_limit(db_session):
     for i in range(5):
-        crud.create_article(db_session, {**ARTICLE, "id": f"pending-{i}", "takeaway": ""})
+        crud.create_article(
+            db_session, {**ARTICLE, "id": f"pending-{i}", "takeaway": ""}
+        )
 
     pending = crud.get_articles_pending_ai(db_session, limit=2)
 
