@@ -2,10 +2,28 @@
 
 import { FormEvent, useState } from "react";
 
+import EmptyState from "../../components/EmptyState";
 import NewsCard from "../../components/NewsCard";
 import NewsCardSkeleton from "../../components/NewsCardSkeleton";
 import { searchNews } from "../../services/api";
 import { SearchResult } from "../../types/article";
+
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -13,6 +31,22 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function runSearch(searchQuery: string) {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await searchNews(searchQuery);
+
+      setResults(data);
+      setHasSearched(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   async function handleSearch(event: FormEvent) {
     event.preventDefault();
@@ -23,19 +57,7 @@ export default function SearchPage() {
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await searchNews(trimmed);
-
-      setResults(data);
-      setHasSearched(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    await runSearch(trimmed);
   }
 
   return (
@@ -78,36 +100,56 @@ export default function SearchPage() {
           )}
 
           {error && (
-            <p className="text-red-600">{error}</p>
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-6 py-4">
+              <p className="text-sm font-medium text-red-700">{error}</p>
+
+              <button
+                type="button"
+                onClick={() => runSearch(query.trim())}
+                className="shrink-0 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition-colors duration-300 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2"
+              >
+                Retry
+              </button>
+            </div>
           )}
 
           {!isLoading && !error && hasSearched && (
             <>
-              <div className="flex items-end justify-between border-b border-gray-200 pb-5">
-                <div>
-                  <h2 className="text-3xl font-semibold tracking-tight text-gray-900">
-                    Results
-                  </h2>
+              {results.length > 0 ? (
+                <>
+                  <div className="flex items-end justify-between border-b border-gray-200 pb-5">
+                    <div>
+                      <h2 className="text-3xl font-semibold tracking-tight text-gray-900">
+                        Results
+                      </h2>
 
-                  <p className="mt-2 text-gray-600">
-                    {results.length}{" "}
-                    {results.length === 1 ? "story" : "stories"} found
-                  </p>
-                </div>
-              </div>
+                      <p className="mt-2 text-gray-600">
+                        {results.length}{" "}
+                        {results.length === 1 ? "story" : "stories"} found
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="mt-6 space-y-5">
-                {results.map((item, index) => (
-                  <NewsCard
-                    key={item.id}
-                    id={item.id}
-                    number={index + 1}
-                    title={item.title}
-                    summary={item.summary}
-                    matchedIn={item.matchedIn}
-                  />
-                ))}
-              </div>
+                  <div className="mt-6 space-y-5">
+                    {results.map((item, index) => (
+                      <NewsCard
+                        key={item.id}
+                        id={item.id}
+                        number={index + 1}
+                        title={item.title}
+                        summary={item.summary}
+                        matchedIn={item.matchedIn}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <EmptyState
+                  icon={<SearchIcon />}
+                  title="No matching stories"
+                  description={`We couldn't find anything for "${query}". Try a different keyword or concept.`}
+                />
+              )}
             </>
           )}
         </section>
