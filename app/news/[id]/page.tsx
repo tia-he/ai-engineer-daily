@@ -11,6 +11,12 @@ type NewsPageProps = {
   }>;
 };
 
+function estimateReadingMinutes(content: string): number {
+  const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+
+  return Math.max(1, Math.round(wordCount / 200));
+}
+
 export default async function NewsPage({ params }: NewsPageProps) {
   const { id } = await params;
 
@@ -48,7 +54,7 @@ export default async function NewsPage({ params }: NewsPageProps) {
           </p>
 
           <p className="mt-5 text-sm text-gray-500">
-            July 21, 2026 · 2 min read
+            {estimateReadingMinutes(article.content)} min read
           </p>
         </header>
 
