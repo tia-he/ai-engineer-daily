@@ -1,55 +1,70 @@
 # AI Engineer Daily
 
-An AI-powered daily briefing platform that helps software engineers stay up to date with AI in just a few minutes each day.
+An AI-powered news platform that automatically ingests AI news from trusted sources, enriches each article with LLM-generated insights, and delivers concise daily briefings for software engineers. Instead of overwhelming users with dozens of AI news articles every day, AI Engineer Daily automatically aggregates trusted sources and uses LLMs to generate concise, actionable briefings in just a few minutes.
 
-Built with Next.js, FastAPI, PostgreSQL, and OpenAI.
+**Tech Stack:** Next.js · React · TypeScript · FastAPI · PostgreSQL · OpenAI · Docker · GitHub Actions
 
 [![CI](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml/badge.svg)](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml)
 
 🌐 **Live Demo:** https://ai-engineer-daily-p09kjojte-ti-a.vercel.app
+
+> **Note:** The backend is hosted on Render's free tier and may take a few seconds to wake up on the first request.
 
 ---
 
 ## Architecture
 
 ```text
-User
-    │
-    ▼
-Next.js (Vercel)
-    │
-REST API
-    ▼
-FastAPI (Render)
-    │
-SQLAlchemy
-    ▼
-PostgreSQL (Neon)
-
-RSS Sources
-(OpenAI / Google AI / Hugging Face)
-    │
-    ▼
-RSS ingestion ──────┐
-                     │ GitHub Actions
-OpenAI API           │ (scheduled)
-    │                │
-    ▼                │
-AI metadata gen ─────┘
+                  RSS Sources
+(OpenAI · Google AI · Hugging Face)
+                         │
+                         ▼
+              GitHub Actions (Cron)
+                         │
+              ingest_rss.py
+                         │
+                         ▼
+                 PostgreSQL (Neon)
+                         │
+              generate_ai.py
+               (OpenAI API)
+                         │
+                         ▼
+              FastAPI (Render)
+                         │
+                    REST API
+                         │
+                         ▼
+             Next.js (Vercel)
+                         │
+                         ▼
+                      Users
 ```
 
-Ingestion and AI metadata generation run as scheduled jobs, not request-time work — the API stays fast and stateless.
+The ingestion and AI enrichment pipelines run asynchronously on scheduled GitHub Actions workflows rather than during API requests, keeping the backend stateless and responsive.
+
 
 ---
 
 ## Core Features
 
-- **Daily briefing homepage** — latest AI news, curated and deduplicated
-- **AI-generated metadata** — summary, takeaway, key concepts, and background for every article
-- **Search** — full-text search across title, summary, takeaway, and concepts
-- **RSS ingestion pipeline** — pulls from OpenAI, Google AI, and Hugging Face, deduplicated by content hash
-- **REST API** — FastAPI with typed Pydantic schemas
-- **Scheduled automation** — ingestion and AI generation run on a cron via GitHub Actions
+### User Features
+
+- **Daily AI Briefing** — curated AI news from trusted sources
+- **AI-generated Metadata** — summary, takeaway, key concepts, and background for every article
+- **Full-text Search** — search across titles, summaries, takeaways, and concepts
+- **Responsive UI** — optimized for desktop and mobile
+
+### Engineering Features
+
+- **Automated RSS ingestion** with content-hash deduplication
+- **Scheduled AI enrichment** powered by the OpenAI API
+- **RESTful API** built with FastAPI and typed Pydantic schemas
+- **Dockerized backend** for reproducible local development
+- **Automated testing** with pytest, Vitest, React Testing Library, and Playwright
+- **Continuous Integration** using GitHub Actions
+- **Database schema migrations** with Alembic
+- **Structured logging** and health check endpoint
 
 ---
 
@@ -59,9 +74,24 @@ Ingestion and AI metadata generation run as scheduled jobs, not request-time wor
 |---|---|
 | Frontend | Next.js (App Router), React, TypeScript, Tailwind CSS |
 | Backend | FastAPI, SQLAlchemy, Pydantic |
-| Database | PostgreSQL (Neon) |
+| Database | PostgreSQL (Neon), Alembic |
 | AI | OpenAI API (`gpt-4o-mini`) |
-| Infra | Vercel, Render, GitHub Actions |
+| Testing | pytest, Vitest, React Testing Library, Playwright |
+| DevOps | Docker, GitHub Actions |
+| Deployment | Vercel, Render |
+
+
+---
+
+## Engineering Highlights
+
+- Designed a decoupled frontend/backend architecture using Next.js and FastAPI.
+- Built an automated RSS ingestion and AI enrichment pipeline using scheduled GitHub Actions workflows.
+- Containerized the backend with Docker for reproducible local development.
+- Added backend API tests (pytest), frontend component tests (Vitest), and end-to-end tests (Playwright).
+- Configured continuous integration with GitHub Actions to automatically run linting, type checking, builds, and tests on every push and pull request.
+- Managed database schema evolution with Alembic migrations.
+- Implemented structured logging and a health check endpoint for production readiness.
 
 ---
 
@@ -113,7 +143,7 @@ backend/
 1. **Ingest** — `ingest_rss.py` pulls articles from configured RSS feeds and inserts new ones, skipping duplicates by a stable content hash.
 2. **Enrich** — `generate_ai.py` finds articles missing AI metadata and calls the OpenAI API to generate a summary, takeaway, concepts, and background.
 3. **Schedule** — both scripts run on a GitHub Actions cron, so the database stays fresh without a long-running worker.
-4. **Serve** — FastAPI exposes the data through a REST API; Next.js renders it server-side and proxies client-side search.
+4. **Serve** — FastAPI exposes the data through a REST API, while Next.js renders pages using the App Router and performs client-side search. Since ingestion and AI enrichment are handled asynchronously by scheduled GitHub Actions workflows, API requests remain lightweight and stateless.
 
 ---
 
@@ -230,11 +260,21 @@ Backend deploys from `render.yaml` (Render Blueprint), whose `startCommand` runs
 
 ## Roadmap
 
-- Semantic search
-- Related articles
-- AI-generated timelines
+### Planned
+
+- Semantic search with pgvector
+- AI-powered news chat
+- Personalized recommendations
 - Daily digest email
-- Personalized feeds
+
+
+---
+
+## Status
+
+✅ **Active Development**
+
+Core functionality and production engineering infrastructure are complete. Future work focuses on AI-powered features and personalized user experiences.
 
 ---
 
