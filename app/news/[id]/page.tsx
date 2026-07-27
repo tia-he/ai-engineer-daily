@@ -34,7 +34,7 @@ export default async function NewsPage({ params }: NewsPageProps) {
         {/* Back Button */}
         <Link
           href="/"
-          className="inline-flex items-center text-sm font-semibold text-gray-600 transition-colors hover:text-gray-900"
+          className="inline-flex items-center rounded-sm text-sm font-semibold text-gray-600 transition-colors duration-300 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
         >
           ← Back to Today's Brief
         </Link>
@@ -119,7 +119,7 @@ export default async function NewsPage({ params }: NewsPageProps) {
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center font-medium text-gray-700 transition-colors hover:text-gray-900 hover:underline"
+                  className="inline-flex items-center rounded-sm font-medium text-gray-700 transition-colors duration-300 hover:text-gray-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
                 >
                   {source.name}
 

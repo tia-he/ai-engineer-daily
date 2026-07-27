@@ -61,7 +61,7 @@ export default function SearchPage() {
 
           <button
             type="submit"
-            className="shrink-0 rounded-full bg-gray-900 px-8 py-4 text-sm font-semibold text-white transition-colors hover:bg-gray-700"
+            className="shrink-0 rounded-full bg-gray-900 px-8 py-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-gray-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
           >
             Search
           </button>

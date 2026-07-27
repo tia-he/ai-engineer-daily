@@ -20,7 +20,7 @@ export default function NewsCard({
   return (
     <Link
       href={`/news/${id}`}
-      className="group block rounded-3xl border border-gray-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+      className="group block rounded-3xl border border-gray-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
     >
       <article className="flex gap-6">
         <span className="pt-1 text-sm font-semibold tabular-nums tracking-wide text-gray-400">
