@@ -2,7 +2,7 @@ from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 from config import DATABASE_URL
-from database import engine
+from database import Base, engine
 from models import Article
 
 SEED_ARTICLES = [
@@ -116,8 +116,10 @@ def initialize_database() -> None:
     """
     写入开发阶段的初始新闻数据。
 
-    需要先运行 `alembic upgrade head` 创建好表结构，这里不再自动建表。
+    表结构由 main.py 启动时的 Base.metadata.create_all() 创建；这里假定
+    表已经存在（起 API 一次，或直接在这里也建一次都可以）。
     """
+    Base.metadata.create_all(bind=engine)
 
     with Session(engine) as db:
         # 每次初始化时先清空旧数据，避免重复插入。

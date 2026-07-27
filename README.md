@@ -2,7 +2,7 @@
 
 An AI-powered news platform that automatically ingests AI news from trusted sources, enriches each article with LLM-generated insights, and delivers concise daily briefings for software engineers. Instead of overwhelming users with dozens of AI news articles every day, AI Engineer Daily automatically aggregates trusted sources and uses LLMs to generate concise, actionable briefings in just a few minutes.
 
-**Tech Stack:** Next.js · React · TypeScript · FastAPI · PostgreSQL · OpenAI · Docker · GitHub Actions
+**Tech Stack:** Next.js · React · TypeScript · FastAPI · PostgreSQL · OpenAI
 
 [![CI](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml/badge.svg)](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml)
 
@@ -43,28 +43,16 @@ An AI-powered news platform that automatically ingests AI news from trusted sour
 
 The ingestion and AI enrichment pipelines run asynchronously on scheduled GitHub Actions workflows rather than during API requests, keeping the backend stateless and responsive.
 
-
 ---
 
 ## Core Features
-
-### User Features
 
 - **Daily AI Briefing** — curated AI news from trusted sources
 - **AI-generated Metadata** — summary, takeaway, key concepts, and background for every article
 - **Full-text Search** — search across titles, summaries, takeaways, and concepts
 - **Responsive UI** — optimized for desktop and mobile
-
-### Engineering Features
-
 - **Automated RSS ingestion** with content-hash deduplication
 - **Scheduled AI enrichment** powered by the OpenAI API
-- **RESTful API** built with FastAPI and typed Pydantic schemas
-- **Dockerized backend** for reproducible local development
-- **Automated testing** with pytest, Vitest, React Testing Library, and Playwright
-- **Continuous Integration** using GitHub Actions
-- **Database schema migrations** with Alembic
-- **Structured logging** and health check endpoint
 
 ---
 
@@ -74,24 +62,10 @@ The ingestion and AI enrichment pipelines run asynchronously on scheduled GitHub
 |---|---|
 | Frontend | Next.js (App Router), React, TypeScript, Tailwind CSS |
 | Backend | FastAPI, SQLAlchemy, Pydantic |
-| Database | PostgreSQL (Neon), Alembic |
+| Database | PostgreSQL (Neon) |
 | AI | OpenAI API (`gpt-4o-mini`) |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| DevOps | Docker, GitHub Actions |
-| Deployment | Vercel, Render |
-
-
----
-
-## Engineering Highlights
-
-- Designed a decoupled frontend/backend architecture using Next.js and FastAPI.
-- Built an automated RSS ingestion and AI enrichment pipeline using scheduled GitHub Actions workflows.
-- Containerized the backend with Docker for reproducible local development.
-- Added backend API tests (pytest), frontend component tests (Vitest), and end-to-end tests (Playwright).
-- Configured continuous integration with GitHub Actions to automatically run linting, type checking, builds, and tests on every push and pull request.
-- Managed database schema evolution with Alembic migrations.
-- Implemented structured logging and a health check endpoint for production readiness.
+| Deployment | Vercel, Render, GitHub Actions |
 
 ---
 
@@ -124,8 +98,8 @@ services/                # API client
 types/                   # Shared TypeScript types
 
 backend/
-├── main.py               # FastAPI app + CORS
-├── app/                  # Routers (news, search)
+├── main.py               # FastAPI app + CORS, creates tables on startup
+├── app/                  # Routers (health, news, search)
 ├── models.py              # SQLAlchemy models
 ├── schemas.py             # Pydantic schemas
 ├── crud.py                # Data access layer
@@ -133,7 +107,7 @@ backend/
 ├── ingest_rss.py           # RSS ingestion
 └── generate_ai.py          # AI metadata generation
 
-.github/workflows/       # Scheduled ingestion + AI generation
+.github/workflows/       # CI + scheduled ingestion
 ```
 
 ---
@@ -171,22 +145,8 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 export DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/ai_engineer_daily"
-alembic upgrade head   # create/update schema — see backend/alembic/
-uvicorn main:app --reload
+uvicorn main:app --reload   # creates tables on startup if they don't exist
 ```
-
-**Backend, with Docker instead** — no local Python/Postgres install
-needed. Runs Postgres + the API (migrations run automatically on
-container start); the frontend still runs with `npm run dev` against
-it as above.
-
-```bash
-docker compose up --build
-```
-
-> If you already have a local Postgres running on port 5432, stop it
-> first (or edit the `postgres` port mapping in `docker-compose.yml`) —
-> both will try to bind the same host port.
 
 **(Optional) Populate the database**
 
@@ -194,12 +154,6 @@ docker compose up --build
 python init_db.py       # dev seed articles
 python ingest_rss.py    # real RSS articles
 python generate_ai.py   # AI metadata (requires OPENAI_API_KEY)
-```
-
-With Docker, run the same scripts inside the running `backend` container:
-
-```bash
-docker compose exec backend python init_db.py
 ```
 
 | Variable | Where | Purpose |
@@ -234,14 +188,15 @@ pytest
 
 **End-to-end test** (Playwright — covers the two async Server
 Component routes Vitest can't render). Requires the backend running
-and seeded (`python init_db.py`) first:
+and seeded (`python init_db.py`) first. Not run in CI — run it
+locally before deploying if you've touched those routes:
 
 ```bash
 npx playwright install --with-deps chromium   # one-time setup
 npm run test:e2e
 ```
 
-All three run in CI on every push/PR — see `.github/workflows/ci.yml`.
+Frontend and backend unit tests run in CI on every push/PR — see `.github/workflows/ci.yml`.
 
 ---
 
@@ -254,7 +209,7 @@ All three run in CI on every push/PR — see `.github/workflows/ci.yml`.
 | Database | [Neon](https://neon.tech) |
 | Scheduled jobs | GitHub Actions (`.github/workflows/ingest.yml`) |
 
-Backend deploys from `render.yaml` (Render Blueprint), whose `startCommand` runs `alembic upgrade head` before starting uvicorn, so schema changes ship automatically on deploy. Frontend uses Vercel's zero-config Next.js detection — no config file needed. Both build on push to `main`.
+Backend deploys from `render.yaml` (Render Blueprint); tables are created automatically on startup if missing. Frontend uses Vercel's zero-config Next.js detection — no config file needed. Both build on push to `main`.
 
 ---
 
@@ -266,15 +221,6 @@ Backend deploys from `render.yaml` (Render Blueprint), whose `startCommand` runs
 - AI-powered news chat
 - Personalized recommendations
 - Daily digest email
-
-
----
-
-## Status
-
-✅ **Active Development**
-
-Core functionality and production engineering infrastructure are complete. Future work focuses on AI-powered features and personalized user experiences.
 
 ---
 
