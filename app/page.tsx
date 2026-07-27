@@ -5,7 +5,7 @@ export default async function Home() {
   const news = await getNews();
 
   return (
-    <main className="min-h-screen bg-gray-50 px-6 pb-20 pt-24">
+    <main className="min-h-screen bg-gray-50 px-6 pb-20 pt-16">
       <div className="mx-auto w-full max-w-3xl">
         <header>
           <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">

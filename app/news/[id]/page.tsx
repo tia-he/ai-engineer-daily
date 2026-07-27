@@ -23,7 +23,7 @@ export default async function NewsPage({ params }: NewsPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-6 pb-24 pt-16">
+    <main className="min-h-screen bg-gray-50 px-6 pb-24 pt-10">
       <article className="mx-auto w-full max-w-3xl">
         {/* Back Button */}
         <Link
