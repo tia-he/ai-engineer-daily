@@ -144,12 +144,30 @@ export DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/ai_en
 uvicorn main:app --reload
 ```
 
+**Backend, with Docker instead** — no local Python/Postgres install
+needed. Runs Postgres + the API; the frontend still runs with `npm run
+dev` against it as above.
+
+```bash
+docker compose up --build
+```
+
+> If you already have a local Postgres running on port 5432, stop it
+> first (or edit the `postgres` port mapping in `docker-compose.yml`) —
+> both will try to bind the same host port.
+
 **(Optional) Populate the database**
 
 ```bash
 python init_db.py       # dev seed articles
 python ingest_rss.py    # real RSS articles
 python generate_ai.py   # AI metadata (requires OPENAI_API_KEY)
+```
+
+With Docker, run the same scripts inside the running `backend` container:
+
+```bash
+docker compose exec backend python init_db.py
 ```
 
 | Variable | Where | Purpose |
