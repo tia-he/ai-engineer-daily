@@ -1,9 +1,12 @@
 import json
+import logging
 import os
 
 from openai import OpenAI
 
 from config import OPENAI_MODEL
+
+logger = logging.getLogger(__name__)
 
 _client: OpenAI | None = None
 
@@ -66,6 +69,6 @@ def generate_article_metadata(title: str, content: str) -> dict | None:
             "concepts": data["concepts"],
             "background": data["background"],
         }
-    except Exception as error:
-        print(f"OpenAI generation failed for '{title}': {error}")
+    except Exception:
+        logger.exception("OpenAI generation failed for '%s'", title)
         return None

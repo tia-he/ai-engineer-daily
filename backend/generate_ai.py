@@ -1,8 +1,12 @@
 import argparse
+import logging
 
 import crud
 from database import SessionLocal
+from logging_config import configure_logging
 from openai_client import generate_article_metadata
+
+logger = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,10 +45,12 @@ def generate_all(limit: int = 100) -> None:
         pending_articles = crud.get_articles_pending_ai(db, limit=limit)
 
         if not pending_articles:
-            print("No pending articles found. Nothing to generate.")
+            logger.info("No pending articles found. Nothing to generate.")
             return
 
-        print(f"Found {len(pending_articles)} articles pending AI generation.")
+        logger.info(
+            "Found %d articles pending AI generation.", len(pending_articles)
+        )
 
         generated = 0
         failed = 0
@@ -62,13 +68,14 @@ def generate_all(limit: int = 100) -> None:
             crud.update_ai_metadata(db, article["id"], ai_data)
             generated += 1
 
-            print(f"Generated AI metadata for: {article['title']}")
+            logger.info("Generated AI metadata for: %s", article["title"])
 
-    print("-" * 60)
-    print(f"Generated: {generated}")
-    print(f"Failed: {failed}")
+    logger.info("-" * 60)
+    logger.info("Generated: %d", generated)
+    logger.info("Failed: %d", failed)
 
 
 if __name__ == "__main__":
+    configure_logging()
     args = parse_args()
     generate_all(limit=args.limit)

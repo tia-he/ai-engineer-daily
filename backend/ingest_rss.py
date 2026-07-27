@@ -1,4 +1,5 @@
 import hashlib
+import logging
 
 import feedparser
 from sqlalchemy.orm import Session
@@ -6,6 +7,9 @@ from sqlalchemy.orm import Session
 import crud
 from config import RSS_FEEDS
 from database import SessionLocal
+from logging_config import configure_logging
+
+logger = logging.getLogger(__name__)
 
 
 def make_article_id(link: str) -> str:
@@ -86,15 +90,18 @@ def ingest_all_feeds() -> None:
         for feed in RSS_FEEDS:
             inserted, skipped = ingest_feed(db, feed)
 
-            print(f"{feed['name']}: inserted {inserted}, skipped {skipped}")
+            logger.info(
+                "%s: inserted %d, skipped %d", feed["name"], inserted, skipped
+            )
 
             total_inserted += inserted
             total_skipped += skipped
 
-    print("-" * 60)
-    print(f"Total inserted: {total_inserted}")
-    print(f"Total skipped (duplicates): {total_skipped}")
+    logger.info("-" * 60)
+    logger.info("Total inserted: %d", total_inserted)
+    logger.info("Total skipped (duplicates): %d", total_skipped)
 
 
 if __name__ == "__main__":
+    configure_logging()
     ingest_all_feeds()

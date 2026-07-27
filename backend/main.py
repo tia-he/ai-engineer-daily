@@ -1,12 +1,20 @@
-from fastapi import FastAPI
+import logging
+import time
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.health import router as health_router
 from app.news import router as news_router
 from app.search import router as search_router
 from config import ALLOWED_ORIGINS
+from logging_config import configure_logging
 
 # 数据库表结构由 Alembic 管理（见 backend/alembic/），启动前需要运行
 # `alembic upgrade head`，这里不再调用 Base.metadata.create_all()。
+
+configure_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="AI Engineer Daily API",
@@ -23,6 +31,24 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+
+    logger.info(
+        "%s %s -> %d (%.1fms)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
+    )
+
+    return response
+
+
+app.include_router(health_router)
 app.include_router(news_router)
 app.include_router(search_router)
 
