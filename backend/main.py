@@ -8,13 +8,13 @@ from app.health import router as health_router
 from app.news import router as news_router
 from app.search import router as search_router
 from config import ALLOWED_ORIGINS
+from database import Base, engine
 from logging_config import configure_logging
-
-# 数据库表结构由 Alembic 管理（见 backend/alembic/），启动前需要运行
-# `alembic upgrade head`，这里不再调用 Base.metadata.create_all()。
 
 configure_logging()
 logger = logging.getLogger(__name__)
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="AI Engineer Daily API",

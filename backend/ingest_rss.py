@@ -81,7 +81,8 @@ def ingest_all_feeds() -> None:
     抓取 config.RSS_FEEDS 中的所有 RSS 源，写入数据库。
     已存在的文章（相同 id）会被跳过，不会重复插入。
 
-    需要先运行 `alembic upgrade head` 创建好表结构，这里不再自动建表。
+    表结构由 main.py 启动时的 Base.metadata.create_all() 创建；这里假定
+    表已经存在（先起过一次 API，或在此之前跑过 init_db.py）。
     """
     total_inserted = 0
     total_skipped = 0
