@@ -141,12 +141,14 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 export DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/ai_engineer_daily"
+alembic upgrade head   # create/update schema — see backend/alembic/
 uvicorn main:app --reload
 ```
 
 **Backend, with Docker instead** — no local Python/Postgres install
-needed. Runs Postgres + the API; the frontend still runs with `npm run
-dev` against it as above.
+needed. Runs Postgres + the API (migrations run automatically on
+container start); the frontend still runs with `npm run dev` against
+it as above.
 
 ```bash
 docker compose up --build
@@ -222,7 +224,7 @@ All three run in CI on every push/PR — see `.github/workflows/ci.yml`.
 | Database | [Neon](https://neon.tech) |
 | Scheduled jobs | GitHub Actions (`.github/workflows/ingest.yml`) |
 
-Backend deploys from `render.yaml` (Render Blueprint). Frontend uses Vercel's zero-config Next.js detection — no config file needed. Both build on push to `main`.
+Backend deploys from `render.yaml` (Render Blueprint), whose `startCommand` runs `alembic upgrade head` before starting uvicorn, so schema changes ship automatically on deploy. Frontend uses Vercel's zero-config Next.js detection — no config file needed. Both build on push to `main`.
 
 ---
 

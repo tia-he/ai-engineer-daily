@@ -4,12 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.news import router as news_router
 from app.search import router as search_router
 from config import ALLOWED_ORIGINS
-from database import Base, engine
 
-
-# 如果数据库表尚不存在，就创建数据库表。
-Base.metadata.create_all(bind=engine)
-
+# 数据库表结构由 Alembic 管理（见 backend/alembic/），启动前需要运行
+# `alembic upgrade head`，这里不再调用 Base.metadata.create_all()。
 
 app = FastAPI(
     title="AI Engineer Daily API",

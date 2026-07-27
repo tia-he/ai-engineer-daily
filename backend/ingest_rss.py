@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 import crud
 from config import RSS_FEEDS
-from database import Base, SessionLocal, engine
+from database import SessionLocal
 
 
 def make_article_id(link: str) -> str:
@@ -76,9 +76,9 @@ def ingest_all_feeds() -> None:
     """
     抓取 config.RSS_FEEDS 中的所有 RSS 源，写入数据库。
     已存在的文章（相同 id）会被跳过，不会重复插入。
-    """
-    Base.metadata.create_all(bind=engine)
 
+    需要先运行 `alembic upgrade head` 创建好表结构，这里不再自动建表。
+    """
     total_inserted = 0
     total_skipped = 0
 
