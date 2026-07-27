@@ -17,6 +17,13 @@ The goal is to keep the product clean, consistent, and easy to extend.
 
 # Typography
 
+Two faces, two jobs. **Geist Sans** carries everything a reader reads.
+**Geist Mono** carries everything a machine produced: source names, counts,
+timings, labels. Both are already loaded in `app/layout.tsx` — never introduce
+a third family, and never set `font-family` on `body` (doing so overrides the
+loaded fonts, which is how this project spent its first release rendering in
+Arial).
+
 ## Page Title (H1)
 
 Used for page titles.
@@ -52,13 +59,36 @@ text-xl text-gray-600
 Used for dates and secondary information.
 
 Example:
-Tuesday · July 21, 2026
+Monday, July 27, 2026
 
 Tailwind:
 
 ```tsx
-text-sm text-gray-500
+text-sm text-ink-faint
 ```
+
+---
+
+## Machine Label
+
+Used for provenance, counts, timings, and eyebrows — anything derived rather
+than written. Mono, uppercase, letterspaced. This is the one typographic move
+that gives the product its character, so it stays consistent everywhere.
+
+Examples:
+
+- OPENAI
+- 3 STORIES · 3 SOURCES
+- MONDAY, JULY 27, 2026
+
+Tailwind:
+
+```tsx
+font-mono text-xs uppercase tracking-[0.16em] text-ink-faint
+```
+
+Durations keep their natural case (`1 min`, `4 min read`) and drop the
+uppercase/tracking, since a unit isn't a label.
 
 ---
 
@@ -83,35 +113,23 @@ text-2xl font-semibold text-gray-900
 
 # Color Palette
 
-## Background
+Colors are referenced through semantic tokens, never as raw `gray-*` utilities.
+The light values are exactly the grays this system started with; the tokens exist
+so the dark scheme in `app/globals.css` can flip them in one place. Hardcoding
+`text-gray-900` strands text on the wrong background at night.
 
-```tsx
-bg-gray-50
-```
+| Token | Utility | Light | Dark | Use |
+|---|---|---|---|---|
+| `--surface` | `bg-surface` | `#f9fafb` (gray-50) | `#0a0a0a` | Page canvas |
+| `--card` | `bg-card` | `#ffffff` | `#141414` | Card fill |
+| `--ink` | `text-ink` | `#111827` (gray-900) | `#ededed` | Primary text |
+| `--ink-muted` | `text-ink-muted` | `#4b5563` (gray-600) | `#a1a1aa` | Body, secondary |
+| `--ink-faint` | `text-ink-faint` | `#6b7280` (gray-500) | `#8b8b93` | Meta, eyebrows |
+| `--rule` | `border-rule` | `#e5e7eb` (gray-200) | `#262626` | Borders, dividers |
+| `--accent-soft` | `bg-accent-soft` | `#f3f4f6` (gray-100) | `#1c1c1c` | Badges, skeletons |
 
-## Card
-
-```tsx
-bg-white
-```
-
-## Primary Text
-
-```tsx
-text-gray-900
-```
-
-## Secondary Text
-
-```tsx
-text-gray-600
-```
-
-## Meta Text
-
-```tsx
-text-gray-500
-```
+Inverted controls (primary buttons) use `bg-ink text-surface`, which stays correct
+in both schemes without a second rule.
 
 ---
 
@@ -124,8 +142,8 @@ Tailwind:
 ```tsx
 rounded-3xl
 border
-border-gray-200
-bg-white
+border-rule
+bg-card
 shadow-sm
 transition-all
 duration-300
@@ -133,7 +151,53 @@ hover:-translate-y-1
 hover:shadow-lg
 ```
 
+## Story card anatomy
 
+A story card leads with a machine-label row — source on the left, reading time
+on the right — separated from the title by a hairline rule. The whole card is
+the link, so it carries no separate "Read article" control; the affordance is
+the title's hover colour and the trailing arrow.
+
+```text
+┌──────────────────────────────────┐
+│ OPENAI                    3 min  │  ← machine label, hairline under
+│ Headline of the story        →   │
+│ One-sentence summary.            │
+│ [concept] [concept] [concept]    │  ← at most 3
+└──────────────────────────────────┘
+```
+
+---
+
+# Provenance, not invented chronology
+
+The article schema has no `published_at` column. Never render a per-article
+date — a fixed string like "July 21, 2026" is fabricated data that also goes
+stale. Show what the record actually supports:
+
+- **Source name** (`sources[0].name`) as the card and article eyebrow.
+- **Reading time** derived from the real body copy at 220 wpm.
+- **Today's date** on the brief only, computed at request time — the brief is
+  genuinely a daily surface, so "today" is true.
+
+For the same reason, story cards carry no `01 / 02 / 03` ordinals: the feed is
+returned in insertion order and is not ranked, so a number would imply an
+editorial judgement the data doesn't contain. If a real `published_at` is added
+later, per-article dates become legitimate and this section should be revised.
+
+---
+
+# States
+
+Every fetching surface needs all four. Each one names what happened and offers
+the next move; none of them apologise or go vague.
+
+| State | Rule |
+|---|---|
+| Loading | Skeleton in `bg-accent-soft` matching the real layout's shape. Scope `loading.tsx` to the route it fits — a boundary above a route that calls `notFound()` streams the response and downgrades its 404 to a 200. |
+| Empty | Say what was looked for and give a way forward (`Nothing matched "…"`, plus suggested topics). |
+| Error | Name the failure and the fix (`The search service didn't respond. Check that the backend is running`). Never a bare "Something went wrong". |
+| Not found | `app/not-found.tsx`, with routes back to the brief and to search. |
 
 ---
 
@@ -163,6 +227,25 @@ Use:
 - hover:shadow-lg
 
 Avoid flashy animations.
+
+`globals.css` reduces all transitions to near-zero under
+`prefers-reduced-motion: reduce`, so nothing above needs its own guard.
+
+---
+
+# Accessibility floor
+
+Non-negotiable, and cheap to keep:
+
+- Keyboard focus is visible everywhere — `globals.css` sets a `:focus-visible`
+  outline in `--ink`, legible on both schemes. Don't remove it with
+  `focus:outline-none` unless you replace it in the same rule.
+- Decorative glyphs (`→`, `↗`, `←`) carry `aria-hidden="true"`.
+- Badges are non-interactive and carry no hover state, so nothing reads as a
+  button that isn't one.
+- Async regions announce with `aria-live="polite"`.
+- Layouts hold to 320px without horizontal scroll. Label/value rows use
+  `flex-wrap` with `gap-x`/`gap-y` rather than a fixed `gap`.
 
 ---
 
