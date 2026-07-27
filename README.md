@@ -4,6 +4,8 @@ An AI-powered daily briefing platform that helps software engineers stay up to d
 
 Built with Next.js, FastAPI, PostgreSQL, and OpenAI.
 
+[![CI](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml/badge.svg)](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml)
+
 🌐 **Live Demo:** https://ai-engineer-daily-p09kjojte-ti-a.vercel.app
 
 ---
@@ -157,6 +159,39 @@ python generate_ai.py   # AI metadata (requires OPENAI_API_KEY)
 | `OPENAI_API_KEY` | backend | Required for AI metadata generation |
 | `OPENAI_MODEL` | backend | Defaults to `gpt-4o-mini` |
 | `ALLOWED_ORIGINS` | backend | CORS-allowed frontend origin(s) |
+
+---
+
+## Testing
+
+**Frontend unit tests** ([Vitest](https://vitest.dev/) + React Testing Library):
+
+```bash
+npm run test          # run once
+npm run test:watch    # watch mode
+```
+
+**Backend tests** (pytest, against a real Postgres database — not
+SQLite, since search relies on Postgres-specific JSON-cast behavior):
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+createdb ai_engineer_daily_test   # one-time setup
+export DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/ai_engineer_daily_test"
+pytest
+```
+
+**End-to-end test** (Playwright — covers the two async Server
+Component routes Vitest can't render). Requires the backend running
+and seeded (`python init_db.py`) first:
+
+```bash
+npx playwright install --with-deps chromium   # one-time setup
+npm run test:e2e
+```
+
+All three run in CI on every push/PR — see `.github/workflows/ci.yml`.
 
 ---
 
