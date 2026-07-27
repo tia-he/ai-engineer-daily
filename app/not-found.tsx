@@ -2,25 +2,37 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-6 text-center">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">
-        404
-      </p>
+    <main className="px-6 pb-20 pt-16">
+      <div className="mx-auto w-full max-w-3xl">
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-ink-faint">
+          404
+        </p>
 
-      <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-        Story not found
-      </h1>
+        <h1 className="mt-3 text-5xl font-bold tracking-tight text-ink">
+          No such story
+        </h1>
 
-      <p className="mt-4 max-w-md text-lg text-gray-600">
-        This article may have been removed, or the link is incorrect.
-      </p>
+        <p className="mt-3 max-w-2xl text-xl leading-8 text-ink-muted">
+          That article isn&rsquo;t in the archive. It may have been removed, or
+          the link may be wrong.
+        </p>
 
-      <Link
-        href="/"
-        className="mt-8 inline-flex items-center rounded-full bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-gray-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
-      >
-        ← Back to Today&apos;s Brief
-      </Link>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/"
+            className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-surface transition-opacity hover:opacity-80"
+          >
+            Read today&rsquo;s brief
+          </Link>
+
+          <Link
+            href="/search"
+            className="rounded-full border border-rule bg-card px-6 py-3 text-sm font-semibold text-ink transition-colors hover:bg-accent-soft"
+          >
+            Search the archive
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }

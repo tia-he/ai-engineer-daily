@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
+/* Semantic surface tokens. Light values are the exact grays DESIGN.md
+   specifies (gray-50 / white / gray-900 / gray-600 / gray-500 / gray-200);
+   the dark block below flips them. Components reference the tokens so a
+   scheme change can't leave text stranded on the wrong background. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface: #f9fafb;
+  --card: #ffffff;
+  --ink: #111827;
+  --ink-muted: #4b5563;
+  --ink-faint: #6b7280;
+  --rule: #e5e7eb;
+  --accent-soft: #f3f4f6;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-accent-soft: var(--accent-soft);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --surface: #0a0a0a;
+    --card: #141414;
+    --ink: #ededed;
+    --ink-muted: #a1a1aa;
+    --ink-faint: #8b8b93;
+    --rule: #262626;
+    --accent-soft: #1c1c1c;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Keyboard focus stays visible on either scheme. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -17,6 +17,13 @@ The goal is to keep the product clean, consistent, and easy to extend.
 
 # Typography
 
+Two faces, two jobs. **Geist Sans** carries everything a reader reads.
+**Geist Mono** carries everything a machine produced: source names, counts,
+timings, labels. Both are already loaded in `app/layout.tsx` — never introduce
+a third family, and never set `font-family` on `body` (doing so overrides the
+loaded fonts, which is how this project spent its first release rendering in
+Arial).
+
 ## Page Title (H1)
 
 Used for page titles.
@@ -49,21 +56,39 @@ text-xl text-gray-600
 
 ## Meta
 
-Used for secondary information (e.g. reading time).
+Used for dates and secondary information.
 
 Example:
-1 min read
+Monday, July 27, 2026
 
 Tailwind:
 
 ```tsx
-text-sm text-gray-500
+text-sm text-ink-faint
 ```
 
-Never display fabricated metadata (e.g. a made-up publication date).
-If the underlying data doesn't exist yet, omit the line rather than
-show something misleading — reading time is fine because it's
-computed for real from the article's content length.
+---
+
+## Machine Label
+
+Used for provenance, counts, timings, and eyebrows — anything derived rather
+than written. Mono, uppercase, letterspaced. This is the one typographic move
+that gives the product its character, so it stays consistent everywhere.
+
+Examples:
+
+- OPENAI
+- 3 STORIES · 3 SOURCES
+- MONDAY, JULY 27, 2026
+
+Tailwind:
+
+```tsx
+font-mono text-xs uppercase tracking-[0.16em] text-ink-faint
+```
+
+Durations keep their natural case (`1 min`, `4 min read`) and drop the
+uppercase/tracking, since a unit isn't a label.
 
 ---
 
@@ -88,65 +113,23 @@ text-2xl font-semibold text-gray-900
 
 # Color Palette
 
-## Background
+Colors are referenced through semantic tokens, never as raw `gray-*` utilities.
+The light values are exactly the grays this system started with; the tokens exist
+so the dark scheme in `app/globals.css` can flip them in one place. Hardcoding
+`text-gray-900` strands text on the wrong background at night.
 
-```tsx
-bg-gray-50
-```
+| Token | Utility | Light | Dark | Use |
+|---|---|---|---|---|
+| `--surface` | `bg-surface` | `#f9fafb` (gray-50) | `#0a0a0a` | Page canvas |
+| `--card` | `bg-card` | `#ffffff` | `#141414` | Card fill |
+| `--ink` | `text-ink` | `#111827` (gray-900) | `#ededed` | Primary text |
+| `--ink-muted` | `text-ink-muted` | `#4b5563` (gray-600) | `#a1a1aa` | Body, secondary |
+| `--ink-faint` | `text-ink-faint` | `#6b7280` (gray-500) | `#8b8b93` | Meta, eyebrows |
+| `--rule` | `border-rule` | `#e5e7eb` (gray-200) | `#262626` | Borders, dividers |
+| `--accent-soft` | `bg-accent-soft` | `#f3f4f6` (gray-100) | `#1c1c1c` | Badges, skeletons |
 
-## Card
-
-```tsx
-bg-white
-```
-
-## Primary Text
-
-```tsx
-text-gray-900
-```
-
-## Secondary Text
-
-```tsx
-text-gray-600
-```
-
-## Meta Text
-
-```tsx
-text-gray-500
-```
-
----
-
-# Navigation
-
-A single sticky NavBar (`components/NavBar.tsx`) appears on every
-page: a wordmark on the left, Home/Search links on the right. The
-active route is bold with a small underline.
-
-Tailwind:
-
-```tsx
-sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md
-```
-
-Because the nav is sticky, page `<main>` elements use a smaller
-`pt-*` than they would otherwise (`pt-16` for Home/Search, `pt-10`
-for the article page) so content doesn't sit doubly offset.
-
----
-
-# Badges
-
-Used for concept tags and "Matched in X" search indicators.
-
-Tailwind:
-
-```tsx
-rounded-full border border-gray-200 bg-gray-100 px-3.5 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200
-```
+Inverted controls (primary buttons) use `bg-ink text-surface`, which stays correct
+in both schemes without a second rule.
 
 ---
 
@@ -159,8 +142,8 @@ Tailwind:
 ```tsx
 rounded-3xl
 border
-border-gray-200
-bg-white
+border-rule
+bg-card
 shadow-sm
 transition-all
 duration-300
@@ -168,7 +151,53 @@ hover:-translate-y-1
 hover:shadow-lg
 ```
 
+## Story card anatomy
 
+A story card leads with a machine-label row — source on the left, reading time
+on the right — separated from the title by a hairline rule. The whole card is
+the link, so it carries no separate "Read article" control; the affordance is
+the title's hover colour and the trailing arrow.
+
+```text
+┌──────────────────────────────────┐
+│ OPENAI                    3 min  │  ← machine label, hairline under
+│ Headline of the story        →   │
+│ One-sentence summary.            │
+│ [concept] [concept] [concept]    │  ← at most 3
+└──────────────────────────────────┘
+```
+
+---
+
+# Provenance, not invented chronology
+
+The article schema has no `published_at` column. Never render a per-article
+date — a fixed string like "July 21, 2026" is fabricated data that also goes
+stale. Show what the record actually supports:
+
+- **Source name** (`sources[0].name`) as the card and article eyebrow.
+- **Reading time** derived from the real body copy at 220 wpm.
+- **Today's date** on the brief only, computed at request time — the brief is
+  genuinely a daily surface, so "today" is true.
+
+For the same reason, story cards carry no `01 / 02 / 03` ordinals: the feed is
+returned in insertion order and is not ranked, so a number would imply an
+editorial judgement the data doesn't contain. If a real `published_at` is added
+later, per-article dates become legitimate and this section should be revised.
+
+---
+
+# States
+
+Every fetching surface needs all four. Each one names what happened and offers
+the next move; none of them apologise or go vague.
+
+| State | Rule |
+|---|---|
+| Loading | Skeleton in `bg-accent-soft` matching the real layout's shape. Scope `loading.tsx` to the route it fits — a boundary above a route that calls `notFound()` streams the response and downgrades its 404 to a 200. |
+| Empty | Say what was looked for and give a way forward (`Nothing matched "…"`, plus suggested topics). |
+| Error | Name the failure and the fix (`The search service didn't respond. Check that the backend is running`). Never a bare "Something went wrong". |
+| Not found | `app/not-found.tsx`, with routes back to the brief and to search. |
 
 ---
 
@@ -186,45 +215,6 @@ Use consistent spacing throughout the project.
 
 ---
 
-# Loading States
-
-Route-level data fetches (Home, Article) use Next.js's `loading.tsx`
-convention; the search page's client-side fetch shows the same
-skeleton inline while `isLoading` is true. Both reuse a single
-`components/NewsCardSkeleton.tsx` so the loading shape always
-matches the loaded shape.
-
-Tailwind:
-
-```tsx
-animate-pulse rounded-3xl border border-gray-200 bg-white p-7
-```
-
-Apply `animate-pulse` to the card's outer wrapper, not to each
-placeholder bar individually — the whole card should pulse together.
-
----
-
-# Empty & Error States
-
-Use `components/EmptyState.tsx` (icon + heading + subtext) instead
-of a plain sentence whenever a list can legitimately be empty (zero
-search results, zero articles). Icons are small inline stroke SVGs
-in `text-gray-400`, not an icon library dependency.
-
-A failed request (e.g. search) is shown as a bordered callout with a
-Retry action, not unstyled red text:
-
-```tsx
-rounded-2xl border border-red-200 bg-red-50 px-6 py-4
-```
-
-An invalid route (e.g. an unknown article id) renders
-`app/not-found.tsx`, styled to match the rest of the product instead
-of Next's default 404 page.
-
----
-
 # Motion
 
 Animations should be subtle.
@@ -237,6 +227,25 @@ Use:
 - hover:shadow-lg
 
 Avoid flashy animations.
+
+`globals.css` reduces all transitions to near-zero under
+`prefers-reduced-motion: reduce`, so nothing above needs its own guard.
+
+---
+
+# Accessibility floor
+
+Non-negotiable, and cheap to keep:
+
+- Keyboard focus is visible everywhere — `globals.css` sets a `:focus-visible`
+  outline in `--ink`, legible on both schemes. Don't remove it with
+  `focus:outline-none` unless you replace it in the same rule.
+- Decorative glyphs (`→`, `↗`, `←`) carry `aria-hidden="true"`.
+- Badges are non-interactive and carry no hover state, so nothing reads as a
+  button that isn't one.
+- Async regions announce with `aria-live="polite"`.
+- Layouts hold to 320px without horizontal scroll. Label/value rows use
+  `flex-wrap` with `gap-x`/`gap-y` rather than a fixed `gap`.
 
 ---
 

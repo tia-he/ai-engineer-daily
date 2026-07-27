@@ -13,35 +13,32 @@ const SECTION_TITLES = [
 
 export default function Loading() {
   return (
-    <main className="min-h-screen bg-gray-50 px-6 pb-24 pt-10">
+    <main className="px-6 pb-24 pt-12">
       <article className="mx-auto w-full max-w-3xl">
         <Link
           href="/"
-          className="inline-flex items-center rounded-sm text-sm font-semibold text-gray-600 transition-colors duration-300 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+          className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.14em] text-ink-faint transition-colors hover:text-ink"
         >
-          ← Back to Today&apos;s Brief
+          <span aria-hidden="true">←</span>
+          Back to the brief
         </Link>
 
-        <header className="mt-12 border-b border-gray-200 pb-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-500">
-            AI Engineer Daily
-          </p>
+        <header className="mt-10 border-b border-rule pb-10">
+          <div className="h-3 w-24 animate-pulse rounded-full bg-accent-soft" />
 
           <div className="mt-4 space-y-3">
-            <div className="h-10 w-full animate-pulse rounded bg-gray-200 sm:h-12" />
-            <div className="h-10 w-2/3 animate-pulse rounded bg-gray-200 sm:h-12" />
+            <div className="h-10 w-full animate-pulse rounded-full bg-accent-soft sm:h-12" />
+            <div className="h-10 w-2/3 animate-pulse rounded-full bg-accent-soft sm:h-12" />
           </div>
 
-          <div className="mt-6 h-6 w-full animate-pulse rounded bg-gray-100" />
-
-          <div className="mt-5 h-4 w-20 animate-pulse rounded bg-gray-100" />
+          <div className="mt-6 h-6 w-full animate-pulse rounded-full bg-accent-soft" />
         </header>
 
         {SECTION_TITLES.map((title) => (
           <Section key={title} title={title}>
             <div className="space-y-3">
-              <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
-              <div className="h-4 w-5/6 animate-pulse rounded bg-gray-100" />
+              <div className="h-4 w-full animate-pulse rounded-full bg-accent-soft" />
+              <div className="h-4 w-5/6 animate-pulse rounded-full bg-accent-soft" />
             </div>
           </Section>
         ))}

@@ -3,8 +3,10 @@ type BadgeProps = {
 };
 
 export default function Badge({ text }: BadgeProps) {
+  // Non-interactive by design: these label a story, they don't filter it.
+  // No hover state, so nothing here reads as a button.
   return (
-    <span className="rounded-full border border-gray-200 bg-gray-100 px-3.5 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200">
+    <span className="rounded-full border border-rule bg-accent-soft px-3 py-1 font-mono text-xs tracking-tight text-ink-muted">
       {text}
     </span>
   );

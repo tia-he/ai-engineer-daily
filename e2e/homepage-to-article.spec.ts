@@ -31,6 +31,6 @@ test("homepage links to an article and back", async ({ page }) => {
     ),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: /Back to Today's Brief/ }).click();
+  await page.getByRole("link", { name: /Back to the brief/i }).click();
   await expect(page).toHaveURL("http://localhost:3000/");
 });

@@ -2,153 +2,199 @@
 
 import { FormEvent, useState } from "react";
 
-import EmptyState from "../../components/EmptyState";
 import NewsCard from "../../components/NewsCard";
-import NewsCardSkeleton from "../../components/NewsCardSkeleton";
+import { readingTime, sourceLabel } from "../../lib/format";
 import { searchNews } from "../../services/api";
 import { SearchResult } from "../../types/article";
 
-function SearchIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
+const SUGGESTIONS = ["agents", "MCP", "code generation", "fine-tuning"];
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  const [submitted, setSubmitted] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function runSearch(searchQuery: string) {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await searchNews(searchQuery);
-
-      setResults(data);
-      setHasSearched(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleSearch(event: FormEvent) {
-    event.preventDefault();
-
-    const trimmed = query.trim();
+  async function runSearch(raw: string) {
+    const trimmed = raw.trim();
 
     if (!trimmed) {
       return;
     }
 
-    await runSearch(trimmed);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await searchNews(trimmed);
+
+      setResults(data);
+      setSubmitted(trimmed);
+      setHasSearched(true);
+    } catch {
+      setError(
+        "The search service didn't respond. Check that the backend is running, then try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    runSearch(query);
+  }
+
+  function handleSuggestion(term: string) {
+    setQuery(term);
+    runSearch(term);
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-6 pb-20 pt-16">
+    <main className="px-6 pb-20 pt-16">
       <div className="mx-auto w-full max-w-3xl">
         <header>
-          <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+          <p className="font-mono text-xs uppercase tracking-[0.16em] text-ink-faint">
+            Archive
+          </p>
+
+          <h1 className="mt-3 text-5xl font-bold tracking-tight text-ink">
             Search
           </h1>
 
-          <p className="mt-4 max-w-2xl text-xl leading-8 text-gray-600">
+          <p className="mt-3 max-w-2xl text-xl leading-8 text-ink-muted">
             Find AI news by title, summary, takeaway, or concept.
           </p>
         </header>
 
-        <form onSubmit={handleSearch} className="mt-12 flex gap-3">
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search articles..."
-            className="w-full rounded-full border border-gray-200 bg-white px-6 py-4 text-base text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-          />
+        <form onSubmit={handleSubmit} className="mt-12">
+          <label htmlFor="search-query" className="sr-only">
+            Search articles
+          </label>
 
-          <button
-            type="submit"
-            className="shrink-0 rounded-full bg-gray-900 px-8 py-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-gray-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
-          >
-            Search
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              id="search-query"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search articles"
+              className="w-full rounded-full border border-rule bg-card px-6 py-4 text-base text-ink shadow-sm placeholder:text-ink-faint focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            />
+
+            <button
+              type="submit"
+              disabled={isLoading || !query.trim()}
+              className="shrink-0 rounded-full bg-ink px-8 py-4 text-sm font-semibold text-surface transition-opacity hover:opacity-80 disabled:opacity-40"
+            >
+              {isLoading ? "Searching" : "Search"}
+            </button>
+          </div>
         </form>
 
-        <section className="mt-16">
-          {isLoading && (
-            <div className="space-y-5">
-              <NewsCardSkeleton />
-              <NewsCardSkeleton />
-              <NewsCardSkeleton />
+        <section className="mt-12" aria-live="polite">
+          {!hasSearched && !isLoading && !error && (
+            <div className="rounded-3xl border border-rule bg-card p-7 shadow-sm">
+              <p className="text-base leading-7 text-ink">
+                Search every brief published so far.
+              </p>
+
+              <p className="mt-2 text-base leading-7 text-ink-muted">
+                Start with a topic:
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {SUGGESTIONS.map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => handleSuggestion(term)}
+                    className="rounded-full border border-rule bg-accent-soft px-3 py-1 font-mono text-xs tracking-tight text-ink-muted transition-colors hover:text-ink"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {error && (
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-6 py-4">
-              <p className="text-sm font-medium text-red-700">{error}</p>
+          {isLoading && (
+            <div className="space-y-5">
+              {[0, 1, 2].map((row) => (
+                <div
+                  key={row}
+                  className="animate-pulse rounded-3xl border border-rule bg-card p-7 shadow-sm"
+                >
+                  <div className="h-3 w-24 rounded-full bg-accent-soft" />
+                  <div className="mt-5 h-6 w-3/4 rounded-full bg-accent-soft" />
+                  <div className="mt-4 h-4 w-full rounded-full bg-accent-soft" />
+                  <div className="mt-2 h-4 w-2/3 rounded-full bg-accent-soft" />
+                </div>
+              ))}
+            </div>
+          )}
 
-              <button
-                type="button"
-                onClick={() => runSearch(query.trim())}
-                className="shrink-0 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition-colors duration-300 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2"
-              >
-                Retry
-              </button>
+          {error && !isLoading && (
+            <div className="rounded-3xl border border-rule bg-card p-7 shadow-sm">
+              <p className="text-base leading-7 text-ink">Search failed</p>
+
+              <p className="mt-2 text-base leading-7 text-ink-muted">{error}</p>
             </div>
           )}
 
           {!isLoading && !error && hasSearched && (
             <>
-              {results.length > 0 ? (
-                <>
-                  <div className="flex items-end justify-between border-b border-gray-200 pb-5">
-                    <div>
-                      <h2 className="text-3xl font-semibold tracking-tight text-gray-900">
-                        Results
-                      </h2>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule pb-4">
+                <h2 className="text-2xl font-semibold tracking-tight text-ink">
+                  Results
+                </h2>
 
-                      <p className="mt-2 text-gray-600">
-                        {results.length}{" "}
-                        {results.length === 1 ? "story" : "stories"} found
-                      </p>
-                    </div>
-                  </div>
+                <span className="shrink-0 font-mono text-xs uppercase tracking-[0.14em] text-ink-faint">
+                  {results.length}{" "}
+                  {results.length === 1 ? "story" : "stories"}
+                </span>
+              </div>
 
-                  <div className="mt-6 space-y-5">
-                    {results.map((item, index) => (
-                      <NewsCard
-                        key={item.id}
-                        id={item.id}
-                        number={index + 1}
-                        title={item.title}
-                        summary={item.summary}
-                        matchedIn={item.matchedIn}
-                      />
+              {results.length === 0 ? (
+                <div className="mt-6 rounded-3xl border border-rule bg-card p-7 shadow-sm">
+                  <p className="text-base leading-7 text-ink">
+                    Nothing matched &ldquo;{submitted}&rdquo;.
+                  </p>
+
+                  <p className="mt-2 text-base leading-7 text-ink-muted">
+                    Search covers titles, summaries, takeaways, and concepts.
+                    Try a broader term:
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {SUGGESTIONS.map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => handleSuggestion(term)}
+                        className="rounded-full border border-rule bg-accent-soft px-3 py-1 font-mono text-xs tracking-tight text-ink-muted transition-colors hover:text-ink"
+                      >
+                        {term}
+                      </button>
                     ))}
                   </div>
-                </>
+                </div>
               ) : (
-                <EmptyState
-                  icon={<SearchIcon />}
-                  title="No matching stories"
-                  description={`We couldn't find anything for "${query}". Try a different keyword or concept.`}
-                />
+                <div className="mt-6 space-y-5">
+                  {results.map((item) => (
+                    <NewsCard
+                      key={item.id}
+                      id={item.id}
+                      title={item.title}
+                      summary={item.summary}
+                      source={sourceLabel(item)}
+                      readMinutes={readingTime(item.content)}
+                      matchedIn={item.matchedIn}
+                    />
+                  ))}
+                </div>
               )}
             </>
           )}

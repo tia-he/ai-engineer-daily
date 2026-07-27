@@ -8,7 +8,7 @@ vi.mock("../../services/api", () => ({ searchNews }));
 import SearchPage from "../../app/search/page";
 
 function typeQuery(value: string) {
-  fireEvent.change(screen.getByPlaceholderText("Search articles..."), {
+  fireEvent.change(screen.getByPlaceholderText("Search articles"), {
     target: { value },
   });
 }
@@ -65,8 +65,8 @@ describe("SearchPage", () => {
     expect(
       await screen.findByText("OpenAI Releases New Coding Model"),
     ).toBeInTheDocument();
-    expect(screen.getByText("1 story found")).toBeInTheDocument();
-    expect(screen.getByText("Matched in Title")).toBeInTheDocument();
+    expect(screen.getByText("1 story")).toBeInTheDocument();
+    expect(screen.getByText("matched in Title")).toBeInTheDocument();
   });
 
   it("shows an empty state when there are no results", async () => {
@@ -76,27 +76,38 @@ describe("SearchPage", () => {
     typeQuery("zzzznomatch");
     submit();
 
-    expect(await screen.findByText("No matching stories")).toBeInTheDocument();
     expect(
-      screen.getByText('We couldn\'t find anything for "zzzznomatch". Try a different keyword or concept.'),
+      await screen.findByText((content) =>
+        content.startsWith("Nothing matched") && content.includes("zzzznomatch"),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Search covers titles, summaries, takeaways, and concepts. Try a broader term:",
+      ),
     ).toBeInTheDocument();
   });
 
-  it("shows an error callout with a working retry on failure", async () => {
+  it("shows an error callout and recovers on a successful retry", async () => {
     searchNews.mockRejectedValueOnce(new Error("network down"));
 
     render(<SearchPage />);
     typeQuery("MCP");
     submit();
 
+    expect(await screen.findByText("Search failed")).toBeInTheDocument();
     expect(
-      await screen.findByText("Something went wrong. Please try again."),
+      screen.getByText(
+        "The search service didn't respond. Check that the backend is running, then try again.",
+      ),
     ).toBeInTheDocument();
 
     searchNews.mockResolvedValueOnce([]);
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    submit();
 
-    expect(await screen.findByText("No matching stories")).toBeInTheDocument();
+    expect(
+      await screen.findByText((content) => content.startsWith("Nothing matched")),
+    ).toBeInTheDocument();
     expect(searchNews).toHaveBeenCalledTimes(2);
   });
 
