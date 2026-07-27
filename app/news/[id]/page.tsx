@@ -36,7 +36,7 @@ export default async function NewsPage({ params }: NewsPageProps) {
           href="/"
           className="inline-flex items-center rounded-sm text-sm font-semibold text-gray-600 transition-colors duration-300 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
         >
-          ← Back to Today's Brief
+          ← Back to Today&apos;s Brief
         </Link>
 
         {/* Header */}

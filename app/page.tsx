@@ -43,7 +43,7 @@ export default async function Home() {
           <div className="flex items-end justify-between border-b border-gray-200 pb-5">
             <div>
               <h2 className="text-3xl font-semibold tracking-tight text-gray-900">
-                Today's Brief
+                Today&apos;s Brief
               </h2>
 
               <p className="mt-2 text-gray-600">
