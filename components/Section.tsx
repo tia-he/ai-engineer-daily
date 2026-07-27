@@ -15,7 +15,7 @@ export default function Section({
         {title}
       </h2>
 
-      <div className="mt-6">
+      <div className="mt-7">
         {children}
       </div>
     </section>

@@ -22,8 +22,8 @@ export default function NewsCard({
       href={`/news/${id}`}
       className="group block rounded-3xl border border-gray-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
     >
-      <article className="flex gap-5">
-        <span className="pt-1 text-sm font-semibold text-gray-400">
+      <article className="flex gap-6">
+        <span className="pt-1 text-sm font-semibold tabular-nums tracking-wide text-gray-400">
           {String(number).padStart(2, "0")}
         </span>
 
@@ -44,7 +44,7 @@ export default function NewsCard({
             </div>
           )}
 
-          <p className="mt-5 text-sm font-semibold text-gray-900">
+          <p className="mt-5 text-sm font-semibold text-gray-500 transition-colors group-hover:text-gray-900">
             Read article
             <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">
               →
