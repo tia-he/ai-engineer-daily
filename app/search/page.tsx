@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 
 import NewsCard from "../../components/NewsCard";
+import NewsCardSkeleton from "../../components/NewsCardSkeleton";
 import { searchNews } from "../../services/api";
 import { SearchResult } from "../../types/article";
 
@@ -69,7 +70,11 @@ export default function SearchPage() {
 
         <section className="mt-16">
           {isLoading && (
-            <p className="text-gray-600">Searching...</p>
+            <div className="space-y-5">
+              <NewsCardSkeleton />
+              <NewsCardSkeleton />
+              <NewsCardSkeleton />
+            </div>
           )}
 
           {error && (
