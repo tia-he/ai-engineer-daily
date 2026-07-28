@@ -1,55 +1,58 @@
 # AI Engineer Daily
 
-An AI-powered daily briefing platform that helps software engineers stay up to date with AI in just a few minutes each day.
+An AI-powered news platform that automatically ingests AI news from trusted sources, enriches each article with LLM-generated insights, and delivers concise daily briefings for software engineers. Instead of overwhelming users with dozens of AI news articles every day, AI Engineer Daily automatically aggregates trusted sources and uses LLMs to generate concise, actionable briefings in just a few minutes.
 
-Built with Next.js, FastAPI, PostgreSQL, and OpenAI.
+**Tech Stack:** Next.js · React · TypeScript · FastAPI · PostgreSQL · OpenAI
 
 [![CI](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml/badge.svg)](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml)
 
 🌐 **Live Demo:** https://ai-engineer-daily-p09kjojte-ti-a.vercel.app
+
+> **Note:** The backend is hosted on Render's free tier and may take a few seconds to wake up on the first request.
 
 ---
 
 ## Architecture
 
 ```text
-User
-    │
-    ▼
-Next.js (Vercel)
-    │
-REST API
-    ▼
-FastAPI (Render)
-    │
-SQLAlchemy
-    ▼
-PostgreSQL (Neon)
-
-RSS Sources
-(OpenAI / Google AI / Hugging Face)
-    │
-    ▼
-RSS ingestion ──────┐
-                     │ GitHub Actions
-OpenAI API           │ (scheduled)
-    │                │
-    ▼                │
-AI metadata gen ─────┘
+                  RSS Sources
+(OpenAI · Google AI · Hugging Face)
+                         │
+                         ▼
+              GitHub Actions (Cron)
+                         │
+              ingest_rss.py
+                         │
+                         ▼
+                 PostgreSQL (Neon)
+                         │
+              generate_ai.py
+               (OpenAI API)
+                         │
+                         ▼
+              FastAPI (Render)
+                         │
+                    REST API
+                         │
+                         ▼
+             Next.js (Vercel)
+                         │
+                         ▼
+                      Users
 ```
 
-Ingestion and AI metadata generation run as scheduled jobs, not request-time work — the API stays fast and stateless.
+The ingestion and AI enrichment pipelines run asynchronously on scheduled GitHub Actions workflows rather than during API requests, keeping the backend stateless and responsive.
 
 ---
 
 ## Core Features
 
-- **Daily briefing homepage** — latest AI news, curated and deduplicated
-- **AI-generated metadata** — summary, takeaway, key concepts, and background for every article
-- **Search** — full-text search across title, summary, takeaway, and concepts
-- **RSS ingestion pipeline** — pulls from OpenAI, Google AI, and Hugging Face, deduplicated by content hash
-- **REST API** — FastAPI with typed Pydantic schemas
-- **Scheduled automation** — ingestion and AI generation run on a cron via GitHub Actions
+- **Daily AI Briefing** — curated AI news from trusted sources
+- **AI-generated Metadata** — summary, takeaway, key concepts, and background for every article
+- **Full-text Search** — search across titles, summaries, takeaways, and concepts
+- **Responsive UI** — optimized for desktop and mobile
+- **Automated RSS ingestion** with content-hash deduplication
+- **Scheduled AI enrichment** powered by the OpenAI API
 
 ---
 
@@ -61,7 +64,8 @@ Ingestion and AI metadata generation run as scheduled jobs, not request-time wor
 | Backend | FastAPI, SQLAlchemy, Pydantic |
 | Database | PostgreSQL (Neon) |
 | AI | OpenAI API (`gpt-4o-mini`) |
-| Infra | Vercel, Render, GitHub Actions |
+| Testing | pytest, Vitest, React Testing Library, Playwright |
+| Deployment | Vercel, Render, GitHub Actions |
 
 ---
 
@@ -94,8 +98,8 @@ services/                # API client
 types/                   # Shared TypeScript types
 
 backend/
-├── main.py               # FastAPI app + CORS
-├── app/                  # Routers (news, search)
+├── main.py               # FastAPI app + CORS, creates tables on startup
+├── app/                  # Routers (health, news, search)
 ├── models.py              # SQLAlchemy models
 ├── schemas.py             # Pydantic schemas
 ├── crud.py                # Data access layer
@@ -103,7 +107,7 @@ backend/
 ├── ingest_rss.py           # RSS ingestion
 └── generate_ai.py          # AI metadata generation
 
-.github/workflows/       # Scheduled ingestion + AI generation
+.github/workflows/       # CI + scheduled ingestion
 ```
 
 ---
@@ -113,7 +117,7 @@ backend/
 1. **Ingest** — `ingest_rss.py` pulls articles from configured RSS feeds and inserts new ones, skipping duplicates by a stable content hash.
 2. **Enrich** — `generate_ai.py` finds articles missing AI metadata and calls the OpenAI API to generate a summary, takeaway, concepts, and background.
 3. **Schedule** — both scripts run on a GitHub Actions cron, so the database stays fresh without a long-running worker.
-4. **Serve** — FastAPI exposes the data through a REST API; Next.js renders it server-side and proxies client-side search.
+4. **Serve** — FastAPI exposes the data through a REST API, while Next.js renders pages using the App Router and performs client-side search. Since ingestion and AI enrichment are handled asynchronously by scheduled GitHub Actions workflows, API requests remain lightweight and stateless.
 
 ---
 
@@ -141,22 +145,8 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 export DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/ai_engineer_daily"
-alembic upgrade head   # create/update schema — see backend/alembic/
-uvicorn main:app --reload
+uvicorn main:app --reload   # creates tables on startup if they don't exist
 ```
-
-**Backend, with Docker instead** — no local Python/Postgres install
-needed. Runs Postgres + the API (migrations run automatically on
-container start); the frontend still runs with `npm run dev` against
-it as above.
-
-```bash
-docker compose up --build
-```
-
-> If you already have a local Postgres running on port 5432, stop it
-> first (or edit the `postgres` port mapping in `docker-compose.yml`) —
-> both will try to bind the same host port.
 
 **(Optional) Populate the database**
 
@@ -164,12 +154,6 @@ docker compose up --build
 python init_db.py       # dev seed articles
 python ingest_rss.py    # real RSS articles
 python generate_ai.py   # AI metadata (requires OPENAI_API_KEY)
-```
-
-With Docker, run the same scripts inside the running `backend` container:
-
-```bash
-docker compose exec backend python init_db.py
 ```
 
 | Variable | Where | Purpose |
@@ -204,14 +188,15 @@ pytest
 
 **End-to-end test** (Playwright — covers the two async Server
 Component routes Vitest can't render). Requires the backend running
-and seeded (`python init_db.py`) first:
+and seeded (`python init_db.py`) first. Not run in CI — run it
+locally before deploying if you've touched those routes:
 
 ```bash
 npx playwright install --with-deps chromium   # one-time setup
 npm run test:e2e
 ```
 
-All three run in CI on every push/PR — see `.github/workflows/ci.yml`.
+Frontend and backend unit tests run in CI on every push/PR — see `.github/workflows/ci.yml`.
 
 ---
 
@@ -224,17 +209,18 @@ All three run in CI on every push/PR — see `.github/workflows/ci.yml`.
 | Database | [Neon](https://neon.tech) |
 | Scheduled jobs | GitHub Actions (`.github/workflows/ingest.yml`) |
 
-Backend deploys from `render.yaml` (Render Blueprint), whose `startCommand` runs `alembic upgrade head` before starting uvicorn, so schema changes ship automatically on deploy. Frontend uses Vercel's zero-config Next.js detection — no config file needed. Both build on push to `main`.
+Backend deploys from `render.yaml` (Render Blueprint); tables are created automatically on startup if missing. Frontend uses Vercel's zero-config Next.js detection — no config file needed. Both build on push to `main`.
 
 ---
 
 ## Roadmap
 
-- Semantic search
-- Related articles
-- AI-generated timelines
+### Planned
+
+- Semantic search with pgvector
+- AI-powered news chat
+- Personalized recommendations
 - Daily digest email
-- Personalized feeds
 
 ---
 
