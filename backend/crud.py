@@ -1,4 +1,4 @@
-from sqlalchemy import String, cast, nulls_last, or_, select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.orm import Session
 
 from models import Article
@@ -43,47 +43,6 @@ def create_article(db: Session, article_data: dict) -> bool:
     article = Article(**article_data)
 
     db.add(article)
-    db.commit()
-
-    return True
-
-
-def get_articles_pending_ai(db: Session, limit: int) -> list[dict]:
-    """
-    查询尚未生成 AI 元数据的文章（takeaway 字段为空），最多取 limit 篇。
-
-    按 published_at 降序排序，让 --limit 真正筛选出最新发布的文章；
-    没有发布时间的行（源没提供 pubDate）排到最后，而不是随意散布在
-    结果中间制造"这是新文章"的假象。
-    """
-    statement = (
-        select(Article)
-        .where(Article.takeaway == "")
-        .order_by(nulls_last(Article.published_at.desc()))
-        .limit(limit)
-    )
-
-    articles = db.scalars(statement).all()
-
-    return [article.to_dict() for article in articles]
-
-
-def update_ai_metadata(db: Session, article_id: str, ai_data: dict) -> bool:
-    """
-    把 OpenAI 生成的 summary/takeaway/concepts/background 写回数据库。
-
-    如果文章不存在，返回 False。
-    """
-    article = db.get(Article, article_id)
-
-    if article is None:
-        return False
-
-    article.summary = ai_data["summary"]
-    article.takeaway = ai_data["takeaway"]
-    article.concepts = ai_data["concepts"]
-    article.background = ai_data["background"]
-
     db.commit()
 
     return True

@@ -30,6 +30,10 @@ RSS_FEEDS = [
 # 生成 AI 元数据使用的 OpenAI 模型，可以通过环境变量覆盖
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
+# 每天最多发布几条精选新闻。宁少勿凑：某天候选故事不够格，
+# 当天就可能少于这个数。
+MAX_DAILY_STORIES = 5
+
 # 允许跨域访问 API 的前端域名列表（逗号分隔），生产环境通过环境变量覆盖
 ALLOWED_ORIGINS = [
     origin.strip()

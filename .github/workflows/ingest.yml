@@ -1,8 +1,10 @@
-name: RSS ingestion and AI metadata generation
+name: Build daily brief
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    # 11:00 UTC once a day — picks, merges, and writes that day's top
+    # stories in one run (see backend/ingest_rss.py:build_daily_brief).
+    - cron: "0 11 * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -25,8 +27,5 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Ingest RSS feeds
+      - name: Build daily brief
         run: python ingest_rss.py
-
-      - name: Generate AI metadata
-        run: python generate_ai.py
