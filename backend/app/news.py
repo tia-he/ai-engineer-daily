@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 import crud
+from config import MAX_DAILY_STORIES
 from database import get_db
 from schemas import Article
 
@@ -16,7 +17,10 @@ router = APIRouter(
     response_model=list[Article],
 )
 def read_news(db: Session = Depends(get_db)):
-    articles = crud.get_news(db)
+    # The brief shows the current rotation of top stories, not the full
+    # archive — see crud.get_recent_news. The archive is still fully
+    # searchable via /search.
+    articles = crud.get_recent_news(db, limit=MAX_DAILY_STORIES)
 
     return articles
 

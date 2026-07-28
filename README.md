@@ -76,22 +76,6 @@ responsive.
 
 ---
 
-## Screenshots
-
-### Homepage
-
-![Homepage](docs/home.jpg)
-
-### Article Detail (Top)
-
-![Article](docs/article_1.jpg)
-
-### Article Detail (Bottom)
-
-![Article](docs/article_2.jpg)
-
----
-
 ## Project Structure
 
 ```text

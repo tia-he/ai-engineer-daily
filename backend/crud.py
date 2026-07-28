@@ -1,4 +1,4 @@
-from sqlalchemy import String, cast, or_, select
+from sqlalchemy import String, cast, nulls_last, or_, select
 from sqlalchemy.orm import Session
 
 from models import Article
@@ -6,9 +6,30 @@ from models import Article
 
 def get_news(db: Session) -> list[dict]:
     """
-    查询全部新闻。
+    查询全部新闻，不做任何数量限制。
+
+    只给 ingest_rss.py 的 get_used_source_urls 用，让它能看到完整历史、
+    不会把已经用过的来源当成新故事重新抓一遍。首页请用
+    get_recent_news——两者不能共用同一个查询，否则"只显示最近几条"
+    会连带破坏"永远不重复处理同一条 RSS"这件事。
     """
     statement = select(Article)
+
+    articles = db.scalars(statement).all()
+
+    return [article.to_dict() for article in articles]
+
+
+def get_recent_news(db: Session, limit: int) -> list[dict]:
+    """
+    首页"Today's Brief"用的查询：只取最近发布的 limit 篇。
+
+    按 published_at 降序，没有发布时间的（旧的 seed/测试数据）排到
+    最后——数量够的话会被自然挤出这个列表，不用手动清理旧数据。
+    """
+    statement = (
+        select(Article).order_by(nulls_last(Article.published_at.desc())).limit(limit)
+    )
 
     articles = db.scalars(statement).all()
 

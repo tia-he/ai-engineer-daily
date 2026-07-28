@@ -1,3 +1,4 @@
+from config import MAX_DAILY_STORIES
 from crud import create_article
 
 ARTICLE = {
@@ -30,6 +31,16 @@ def test_read_news_returns_seeded_articles(client, db_session):
     assert len(body) == 1
     assert body[0]["id"] == "test-article-1"
     assert body[0]["title"] == "Test Article"
+
+
+def test_read_news_caps_at_max_daily_stories(client, db_session):
+    for i in range(MAX_DAILY_STORIES + 3):
+        create_article(db_session, {**ARTICLE, "id": f"article-{i}"})
+
+    response = client.get("/news")
+
+    assert response.status_code == 200
+    assert len(response.json()) == MAX_DAILY_STORIES
 
 
 def test_read_article_found(client, db_session):
