@@ -8,13 +8,13 @@ from app.health import router as health_router
 from app.news import router as news_router
 from app.search import router as search_router
 from config import ALLOWED_ORIGINS
-from database import Base, engine
+from database import ensure_schema
 from logging_config import configure_logging
 
 configure_logging()
 logger = logging.getLogger(__name__)
 
-Base.metadata.create_all(bind=engine)
+ensure_schema()
 
 app = FastAPI(
     title="AI Engineer Daily API",
