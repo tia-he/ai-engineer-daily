@@ -6,7 +6,7 @@ An AI-powered news platform that automatically ingests AI news from trusted sour
 
 [![CI](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml/badge.svg)](https://github.com/tia-he/ai-engineer-daily/actions/workflows/ci.yml)
 
-🌐 **Live Demo:** https://ai-engineer-daily-p09kjojte-ti-a.vercel.app
+🌐 **Live Demo:**  https://ai-engineer-daily.vercel.app
 
 > **Note:** The backend is hosted on Render's free tier and may take a few seconds to wake up on the first request.
 
@@ -16,18 +16,18 @@ An AI-powered news platform that automatically ingests AI news from trusted sour
 
 ```text
                   RSS Sources
-(OpenAI · Google AI · Hugging Face)
+(OpenAI · Anthropic · Google AI · Hugging Face)
                          │
                          ▼
-              GitHub Actions (Cron)
+              GitHub Actions (Cron, daily)
                          │
               ingest_rss.py
+        (select top stories, then
+         synthesize each with the
+              OpenAI API)
                          │
                          ▼
                  PostgreSQL (Neon)
-                         │
-              generate_ai.py
-               (OpenAI API)
                          │
                          ▼
               FastAPI (Render)
@@ -41,18 +41,25 @@ An AI-powered news platform that automatically ingests AI news from trusted sour
                       Users
 ```
 
-The ingestion and AI enrichment pipelines run asynchronously on scheduled GitHub Actions workflows rather than during API requests, keeping the backend stateless and responsive.
+Once a day, a scheduled GitHub Actions workflow runs `ingest_rss.py`,
+which pulls new posts from every feed, asks the OpenAI API to pick the
+day's most significant stories (merging any that cover the same event
+across sources), and asks it again per story to write one fully-formed
+article from the combined source material. Every article is complete
+by the time it's written to the database, so serving requests never
+waits on ingestion or the OpenAI API — the backend stays stateless and
+responsive.
 
 ---
 
 ## Core Features
 
-- **Daily AI Briefing** — curated AI news from trusted sources
+- **Daily AI Briefing** — a handful of the day's most significant stories, not a firehose of every post
+- **Cross-source synthesis** — stories covered by more than one source are merged into a single article instead of duplicated
 - **AI-generated Metadata** — summary, takeaway, key concepts, and background for every article
 - **Full-text Search** — search across titles, summaries, takeaways, and concepts
 - **Responsive UI** — optimized for desktop and mobile
-- **Automated RSS ingestion** with content-hash deduplication
-- **Scheduled AI enrichment** powered by the OpenAI API
+- **Automated RSS ingestion** that skips any post already covered by an existing article
 
 ---
 
@@ -104,8 +111,8 @@ backend/
 ├── schemas.py             # Pydantic schemas
 ├── crud.py                # Data access layer
 ├── config.py               # Environment-driven config
-├── ingest_rss.py           # RSS ingestion
-└── generate_ai.py          # AI metadata generation
+├── openai_client.py        # Story selection + article synthesis (OpenAI calls)
+└── ingest_rss.py           # Daily brief pipeline: fetch, select, synthesize, publish
 
 .github/workflows/       # CI + scheduled ingestion
 ```
@@ -114,10 +121,11 @@ backend/
 
 ## How It Works
 
-1. **Ingest** — `ingest_rss.py` pulls articles from configured RSS feeds and inserts new ones, skipping duplicates by a stable content hash.
-2. **Enrich** — `generate_ai.py` finds articles missing AI metadata and calls the OpenAI API to generate a summary, takeaway, concepts, and background.
-3. **Schedule** — both scripts run on a GitHub Actions cron, so the database stays fresh without a long-running worker.
-4. **Serve** — FastAPI exposes the data through a REST API, while Next.js renders pages using the App Router and performs client-side search. Since ingestion and AI enrichment are handled asynchronously by scheduled GitHub Actions workflows, API requests remain lightweight and stateless.
+1. **Fetch** — `ingest_rss.py` pulls entries from every configured RSS feed, skipping any whose link is already used as a source on an existing article.
+2. **Select** — one OpenAI call groups that day's new entries by real-world story (multiple sources covering the same event become one group) and picks at most `MAX_DAILY_STORIES` (5) most significant — fewer is fine, it never pads the list.
+3. **Synthesize** — one OpenAI call per selected story combines all of its sources into a single article: a full, normal-length body deduped across sources (never padded or invented beyond what the sources say), plus a takeaway and background that are allowed more editorial latitude.
+4. **Schedule** — the whole pipeline runs once a day on a GitHub Actions cron, so the database stays fresh without a long-running worker.
+5. **Serve** — FastAPI exposes the data through a REST API, while Next.js renders pages using the App Router and performs client-side search. Since ingestion and synthesis are handled asynchronously by a scheduled GitHub Actions workflow, API requests remain lightweight and stateless.
 
 ---
 
@@ -152,15 +160,14 @@ uvicorn main:app --reload   # creates tables on startup if they don't exist
 
 ```bash
 python init_db.py       # dev seed articles
-python ingest_rss.py    # real RSS articles
-python generate_ai.py   # AI metadata (requires OPENAI_API_KEY)
+python ingest_rss.py    # real RSS articles, selected + synthesized (requires OPENAI_API_KEY)
 ```
 
 | Variable | Where | Purpose |
 |---|---|---|
 | `NEXT_PUBLIC_API_BASE_URL` | frontend | Backend API base URL |
 | `DATABASE_URL` | backend | PostgreSQL connection string |
-| `OPENAI_API_KEY` | backend | Required for AI metadata generation |
+| `OPENAI_API_KEY` | backend | Required for story selection and article synthesis |
 | `OPENAI_MODEL` | backend | Defaults to `gpt-4o-mini` |
 | `ALLOWED_ORIGINS` | backend | CORS-allowed frontend origin(s) |
 
