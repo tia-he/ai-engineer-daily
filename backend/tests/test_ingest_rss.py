@@ -6,6 +6,7 @@ import ingest_rss
 from ingest_rss import (
     assemble_article,
     build_daily_brief,
+    extract_body,
     fetch_candidates,
     get_used_source_urls,
     parse_image_url,
@@ -65,6 +66,27 @@ def test_parse_image_url_falls_back_to_img_tag_in_summary():
     }
 
     assert parse_image_url(entry) == "https://example.com/inline.jpg"
+
+
+def test_extract_body_prefers_full_content_over_summary():
+    entry = {
+        "summary": "A one-line teaser.",
+        "content": [{"value": "The full multi-paragraph post body."}],
+    }
+
+    assert extract_body(entry) == "The full multi-paragraph post body."
+
+
+def test_extract_body_falls_back_to_summary_when_no_content():
+    entry = {"summary": "A one-line teaser."}
+
+    assert extract_body(entry) == "A one-line teaser."
+
+
+def test_extract_body_falls_back_to_summary_when_content_is_blank():
+    entry = {"summary": "A one-line teaser.", "content": [{"value": "   "}]}
+
+    assert extract_body(entry) == "A one-line teaser."
 
 
 def test_get_used_source_urls_collects_every_source_across_articles(db_session):

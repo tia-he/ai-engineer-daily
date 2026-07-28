@@ -132,3 +132,45 @@ def test_synthesize_article_returns_none_on_failure(monkeypatch):
     assert (
         synthesize_article([{"title": "T", "content": "C", "source_name": "X"}]) is None
     )
+
+
+def test_synthesize_article_rejects_a_blank_field(monkeypatch):
+    monkeypatch.setattr(
+        openai_client,
+        "_get_client",
+        lambda: fake_client(
+            {
+                "title": "Merged",
+                "summary": "S",
+                "content": "",
+                "takeaway": "TK",
+                "concepts": ["A"],
+                "background": "BG",
+            }
+        ),
+    )
+
+    result = synthesize_article([{"title": "T", "content": "C", "source_name": "X"}])
+
+    assert result is None
+
+
+def test_synthesize_article_rejects_empty_concepts(monkeypatch):
+    monkeypatch.setattr(
+        openai_client,
+        "_get_client",
+        lambda: fake_client(
+            {
+                "title": "Merged",
+                "summary": "S",
+                "content": "C",
+                "takeaway": "TK",
+                "concepts": [],
+                "background": "BG",
+            }
+        ),
+    )
+
+    result = synthesize_article([{"title": "T", "content": "C", "source_name": "X"}])
+
+    assert result is None

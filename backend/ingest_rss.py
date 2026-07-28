@@ -76,6 +76,24 @@ def get_used_source_urls(db: Session) -> set[str]:
     }
 
 
+def extract_body(entry) -> str:
+    """
+    尽量取到全文，而不是一两句话的摘要。
+
+    很多博客的 RSS/Atom 会在 content:encoded（feedparser 里是
+    entry.content）放完整正文，summary 只是导语；取不到全文才退回
+    summary。这直接决定了 synthesize_article 有多少真实材料可用——
+    只喂它一句话摘要，合成出来的文章也只能是一句话。
+    """
+    for content in entry.get("content", []):
+        value = content.get("value", "").strip()
+
+        if value:
+            return value
+
+    return entry.get("summary", "")
+
+
 def fetch_candidates(feed: dict, used_urls: set[str]) -> list[dict]:
     """
     抓取单个 RSS 源，返回尚未被任何已发布文章引用过的候选故事。
@@ -95,7 +113,7 @@ def fetch_candidates(feed: dict, used_urls: set[str]) -> list[dict]:
         candidates.append(
             {
                 "title": entry.get("title", "Untitled"),
-                "content": entry.get("summary", ""),
+                "content": extract_body(entry),
                 "source_name": feed["name"],
                 "url": link,
                 "published_at": parse_published_at(entry),

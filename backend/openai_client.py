@@ -33,18 +33,20 @@ SYNTHESIS_SYSTEM_PROMPT = (
     "source excerpts about the same story: each has a source name, a "
     "title, and a body. If there is more than one source, combine "
     "them — keep every distinct, valuable detail, and drop only exact "
-    "repetition. Respond with a JSON object with exactly these keys: "
+    "repetition. None of the output fields may be empty, even when a "
+    "source body is just one or two sentences — write as much as that "
+    "material honestly supports, never less than a real sentence per "
+    "field. Respond with a JSON object with exactly these keys: "
     '"title" (a clear headline), "summary" (a 1-2 sentence teaser), '
-    '"content" (the full article body, written at normal news-article '
-    "length and detail for what the sources actually say — do not pad "
-    "or invent detail beyond the source material; if the sources are "
-    'thin, a shorter article is the correct output), "takeaway" (1-2 '
-    "sentences on why this matters to a software engineer — you may "
-    'add reasonable editorial interpretation here), "background" (1-3 '
-    "sentences of context a reader may need — you may draw on general "
-    "knowledge of the field to explain context the sources assume), and "
-    '"concepts" (a list of 2-5 short technical concept names). Respond '
-    "with JSON only."
+    '"content" (the article body: restate the source material as a '
+    "normal piece of prose — do not pad or invent detail beyond it, "
+    'but never leave it blank), "takeaway" (1-2 sentences on why this '
+    "matters to a software engineer — you may add reasonable editorial "
+    'interpretation here), "background" (1-3 sentences of context a '
+    "reader may need — you may draw on your own general knowledge of "
+    "the field for this one, even if the sources do not spell it out), "
+    'and "concepts" (a list of 2-5 short technical concept names). '
+    "Respond with JSON only."
 )
 
 
@@ -136,7 +138,7 @@ def synthesize_article(entries: list[dict]) -> dict | None:
 
         data = json.loads(response.choices[0].message.content)
 
-        return {
+        result = {
             "title": data["title"],
             "summary": data["summary"],
             "content": data["content"],
@@ -144,6 +146,19 @@ def synthesize_article(entries: list[dict]) -> dict | None:
             "concepts": data["concepts"],
             "background": data["background"],
         }
+
+        # A response that's valid JSON but leaves a required field blank
+        # is still a failure — publishing it would put an empty section
+        # on the page, which is worse than not publishing that story today.
+        text_fields = ("title", "summary", "content", "takeaway", "background")
+        if (
+            any(not result[field].strip() for field in text_fields)
+            or not result["concepts"]
+        ):
+            logger.warning("Synthesis returned an empty field, discarding: %s", result)
+            return None
+
+        return result
     except Exception:
         logger.exception("Article synthesis failed")
         return None
