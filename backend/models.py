@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, String, Text
+from sqlalchemy import JSON, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -60,6 +61,20 @@ class Article(Base):
         default=list,
     )
 
+    # 两个字段都可为空：不是每个 RSS 源都带发布时间/配图，取不到就是
+    # NULL，前端据此决定是否渲染日期/图片区域，而不是编造数据。
+    published_at: Mapped[datetime | None] = mapped_column(
+        "publishedAt",
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    image_url: Mapped[str | None] = mapped_column(
+        "imageUrl",
+        String,
+        nullable=True,
+    )
+
     def to_dict(self) -> dict[str, Any]:
         """
         把 SQLAlchemy Article 对象转换成前端需要的 JSON 格式。
@@ -74,4 +89,8 @@ class Article(Base):
             "background": self.background,
             "relatedNews": self.related_news,
             "sources": self.sources,
+            "publishedAt": (
+                self.published_at.isoformat() if self.published_at else None
+            ),
+            "imageUrl": self.image_url,
         }

@@ -131,6 +131,30 @@ so the dark scheme in `app/globals.css` can flip them in one place. Hardcoding
 Inverted controls (primary buttons) use `bg-ink text-surface`, which stays correct
 in both schemes without a second rule.
 
+## Chrome
+
+| Token | Utility | Value | Use |
+|---|---|---|---|
+| `--chrome` | `bg-chrome` | `#111827` (fixed) | Masthead, the brief's hero, the article dateline bar |
+| `--chrome-ink` | `text-chrome-ink` | `#f9fafb` (fixed) | Text/icons on chrome |
+
+Unlike every other token, `chrome` does **not** flip with `prefers-color-scheme` —
+it's the site's constant dark instrument bar, not body content. Using the
+inverting `bg-ink`/`text-surface` pair for a structural band (rather than a
+small control) makes it flip to a *light* plank floating on a dark page in
+dark mode, which is the bug this token exists to avoid. Borders/hairlines
+inside chrome use `border-white/10` rather than `border-rule`, since `--rule`
+also flips and would go invisible against a background that no longer does.
+
+Every chrome surface also carries the `.chrome-grid` class (`globals.css`) —
+a faint dot-lattice `background-image`, not a photo. It's the one place this
+product spends a decorative flourish, so it's applied identically everywhere
+chrome appears (masthead, hero, dateline bar, and their loading skeletons)
+rather than varied per page. A literal photo was considered and rejected:
+there's no single image that represents "AI engineering" without becoming a
+stock-photo cliché, and a generated texture keeps the brand consistent
+without a licensing/sourcing question per page.
+
 ---
 
 # Cards
@@ -160,30 +184,41 @@ the title's hover colour and the trailing arrow.
 
 ```text
 ┌──────────────────────────────────┐
-│ OPENAI                    3 min  │  ← machine label, hairline under
-│ Headline of the story        →   │
-│ One-sentence summary.            │
-│ [concept] [concept] [concept]    │  ← at most 3
+│ ┌────────┐ OPENAI · JUL 27 3 min │  ← machine label, hairline under
+│ │ image  │ Headline of the story │     →
+│ │(if any)│ One-sentence summary. │
+│ └────────┘ [concept] [concept]   │  ← at most 3
 └──────────────────────────────────┘
 ```
+
+The thumbnail and the `· JUL 27` date are both conditional on the record
+actually having them (`imageUrl`, `publishedAt`) — a card with neither just
+falls back to the text-only layout above. Never a placeholder image, never a
+fabricated date.
 
 ---
 
 # Provenance, not invented chronology
 
-The article schema has no `published_at` column. Never render a per-article
-date — a fixed string like "July 21, 2026" is fabricated data that also goes
-stale. Show what the record actually supports:
+`published_at`/`image_url` are nullable columns fed by best-effort RSS
+parsing (`backend/ingest_rss.py`): not every source provides a publish date
+or a cover image, so a missing one is `null`, never a fabricated stand-in
+like "July 21, 2026" or a stock photo. Show what the record actually
+supports:
 
 - **Source name** (`sources[0].name`) as the card and article eyebrow.
 - **Reading time** derived from the real body copy at 220 wpm.
-- **Today's date** on the brief only, computed at request time — the brief is
-  genuinely a daily surface, so "today" is true.
+- **Published date** (`lib/format.ts#publishedLabel`) next to the source,
+  only when the feed provided one.
+- **Cover image** (`imageUrl`) as the card thumbnail / article lead image,
+  only when the feed provided one.
+- **Today's date** on the brief header itself, computed at request time —
+  the brief is genuinely a daily surface, so "today" is true regardless of
+  any one article's `publishedAt`.
 
 For the same reason, story cards carry no `01 / 02 / 03` ordinals: the feed is
 returned in insertion order and is not ranked, so a number would imply an
-editorial judgement the data doesn't contain. If a real `published_at` is added
-later, per-article dates become legitimate and this section should be revised.
+editorial judgement the data doesn't contain.
 
 ---
 

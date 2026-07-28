@@ -1,7 +1,13 @@
 import Link from "next/link";
 
 import NewsCard from "../../components/NewsCard";
-import { distinctSources, readingTime, sourceLabel, todayLabel } from "../../lib/format";
+import {
+  distinctSources,
+  publishedLabel,
+  readingTime,
+  sourceLabel,
+  todayLabel,
+} from "../../lib/format";
 import { getNews } from "../../services/api";
 
 export default async function Home() {
@@ -16,23 +22,25 @@ export default async function Home() {
   const sources = news ? distinctSources(news) : [];
 
   return (
-    <main className="px-6 pb-20 pt-16">
-      <div className="mx-auto w-full max-w-3xl">
-        <header>
-          <p className="font-mono text-xs uppercase tracking-[0.16em] text-ink-faint">
+    <main>
+      <div className="chrome-grid border-b border-white/10 bg-chrome text-chrome-ink">
+        <div className="mx-auto w-full max-w-3xl px-6 py-16 sm:py-20">
+          <p className="font-mono text-xs uppercase tracking-[0.16em] text-chrome-ink/60">
             {todayLabel()}
           </p>
 
-          <h1 className="mt-3 text-5xl font-bold tracking-tight text-ink">
+          <h1 className="mt-3 text-5xl font-bold tracking-tight text-chrome-ink">
             AI Engineer Daily
           </h1>
 
-          <p className="mt-3 max-w-2xl text-xl leading-8 text-ink-muted">
+          <p className="mt-3 max-w-2xl text-xl leading-8 text-chrome-ink/80">
             Stay ahead in AI and software engineering.
           </p>
-        </header>
+        </div>
+      </div>
 
-        <section className="mt-12">
+      <div className="mx-auto w-full max-w-3xl px-6 pb-20 pt-12">
+        <section>
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule pb-4">
             <h2 className="text-2xl font-semibold tracking-tight text-ink">
               Today&rsquo;s Brief
@@ -87,6 +95,8 @@ export default async function Home() {
                   title={item.title}
                   summary={item.summary}
                   source={sourceLabel(item)}
+                  date={publishedLabel(item)}
+                  imageUrl={item.imageUrl}
                   readMinutes={readingTime(item.content)}
                   concepts={item.concepts}
                 />
@@ -98,3 +108,4 @@ export default async function Home() {
     </main>
   );
 }
+

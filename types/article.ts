@@ -26,6 +26,12 @@ export interface Article {
   relatedNews: RelatedNews[];
 
   sources: Source[];
+
+  /** Real publish date from the source feed. `null` when the feed didn't provide one — never fabricated. */
+  publishedAt: string | null;
+
+  /** Cover image scraped from the source feed. `null` when the feed didn't provide one — never a placeholder. */
+  imageUrl: string | null;
 }
 
 export interface SearchResult extends Article {

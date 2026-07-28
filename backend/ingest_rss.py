@@ -1,5 +1,8 @@
+import calendar
 import hashlib
 import logging
+import re
+from datetime import UTC, datetime
 
 import feedparser
 from sqlalchemy.orm import Session
@@ -11,12 +14,54 @@ from logging_config import configure_logging
 
 logger = logging.getLogger(__name__)
 
+IMG_SRC_RE = re.compile(r'<img[^>]+src="([^"]+)"', re.IGNORECASE)
+
 
 def make_article_id(link: str) -> str:
     """
     使用 entry.link 的 MD5 哈希值作为文章的稳定 id。
     """
     return hashlib.md5(link.encode("utf-8")).hexdigest()
+
+
+def parse_published_at(entry) -> datetime | None:
+    """
+    从 feedparser entry 里取真实发布时间。
+
+    entry.published_parsed 是 feedparser 已经解析好的 UTC struct_time；
+    源没有提供发布时间（比如缺 pubDate）时它是 None，这里如实返回
+    None，不用抓取时间或今天的日期顶替。
+    """
+    parsed = entry.get("published_parsed")
+
+    if parsed is None:
+        return None
+
+    return datetime.fromtimestamp(calendar.timegm(parsed), tz=UTC)
+
+
+def parse_image_url(entry) -> str | None:
+    """
+    尽量从 feed 自带的字段里取一张配图，取不到就返回 None（不用占位图）。
+
+    按 media:thumbnail / media:content / image 类型 enclosure / 摘要 HTML
+    里的第一个 <img> 的顺序尝试，覆盖大多数博客类 RSS 的常见写法。
+    """
+    for thumb in entry.get("media_thumbnail", []):
+        if thumb.get("url"):
+            return thumb["url"]
+
+    for media in entry.get("media_content", []):
+        if media.get("url") and media.get("medium", "image") == "image":
+            return media["url"]
+
+    for link in entry.get("links", []):
+        if link.get("rel") == "enclosure" and link.get("type", "").startswith("image/"):
+            return link.get("href")
+
+    match = IMG_SRC_RE.search(entry.get("summary", ""))
+
+    return match.group(1) if match else None
 
 
 def parse_entry(feed_name: str, entry) -> dict | None:
@@ -48,6 +93,8 @@ def parse_entry(feed_name: str, entry) -> dict | None:
                 "url": link,
             }
         ],
+        "published_at": parse_published_at(entry),
+        "image_url": parse_image_url(entry),
     }
 
 

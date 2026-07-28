@@ -1,14 +1,34 @@
 import { Article } from "../types/article";
 
 /**
- * The article schema has no `published_at` column, so a per-article date
- * would have to be invented. These helpers only derive things the data
- * actually supports: where a story came from, and how long it is.
+ * These helpers only derive things the data actually supports: where a
+ * story came from, how long it is, and — when the source feed provided
+ * one — when it was published. A missing `publishedAt` renders as no date
+ * at all, never a fabricated or "today" placeholder.
  */
 
 /** Publisher of record for a story — the label the brief scans on. */
 export function sourceLabel(article: Pick<Article, "sources">): string | null {
   return article.sources?.[0]?.name ?? null;
+}
+
+/** Compact "JUL 27" label from the real publish date. `null` when the source feed didn't provide one. */
+export function publishedLabel(
+  article: Pick<Article, "publishedAt">,
+): string | null {
+  if (!article.publishedAt) {
+    return null;
+  }
+
+  const date = new Date(article.publishedAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date
+    .toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    .toUpperCase();
 }
 
 /** Reading time from the real body copy, at a 220 wpm skim. */

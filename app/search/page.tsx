@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 
 import NewsCard from "../../components/NewsCard";
-import { readingTime, sourceLabel } from "../../lib/format";
+import { publishedLabel, readingTime, sourceLabel } from "../../lib/format";
 import { searchNews } from "../../services/api";
 import { SearchResult } from "../../types/article";
 
@@ -190,6 +190,8 @@ export default function SearchPage() {
                       title={item.title}
                       summary={item.summary}
                       source={sourceLabel(item)}
+                      date={publishedLabel(item)}
+                      imageUrl={item.imageUrl}
                       readMinutes={readingTime(item.content)}
                       matchedIn={item.matchedIn}
                     />
