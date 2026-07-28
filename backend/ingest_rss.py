@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 import crud
 from config import RSS_FEEDS
-from database import SessionLocal
+from database import SessionLocal, ensure_schema
 from logging_config import configure_logging
 
 logger = logging.getLogger(__name__)
@@ -128,9 +128,11 @@ def ingest_all_feeds() -> None:
     抓取 config.RSS_FEEDS 中的所有 RSS 源，写入数据库。
     已存在的文章（相同 id）会被跳过，不会重复插入。
 
-    表结构由 main.py 启动时的 Base.metadata.create_all() 创建；这里假定
-    表已经存在（先起过一次 API，或在此之前跑过 init_db.py）。
+    这个脚本作为独立进程运行（不经过 main.py 的 API 启动流程），所以
+    自己调用 ensure_schema() 建表/补列，不能假定 API 已经先起过一次。
     """
+    ensure_schema()
+
     total_inserted = 0
     total_skipped = 0
 
