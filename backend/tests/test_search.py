@@ -10,7 +10,6 @@ def make_article(article_id, **overrides):
         "takeaway": "Default takeaway.",
         "concepts": ["LLM"],
         "background": "",
-        "related_news": [],
         "sources": [],
     }
     base.update(overrides)

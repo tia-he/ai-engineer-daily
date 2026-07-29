@@ -10,7 +10,6 @@ ARTICLE = {
     "takeaway": "",
     "concepts": [],
     "background": "",
-    "related_news": [],
     "sources": [],
 }
 

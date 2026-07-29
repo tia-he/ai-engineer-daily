@@ -3,7 +3,7 @@ import Link from "next/link";
 import Section from "../../../components/Section";
 
 const MAIN_SECTION_TITLES = ["Takeaway", "Article", "Background"];
-const RAIL_SECTION_TITLES = ["Concepts", "Sources", "Related"];
+const RAIL_SECTION_TITLES = ["Concepts", "Sources"];
 
 export default function Loading() {
   return (

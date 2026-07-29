@@ -176,7 +176,6 @@ def test_get_used_source_urls_collects_every_source_across_articles(db_session):
             "takeaway": "TK1",
             "concepts": [],
             "background": "",
-            "related_news": [],
             "sources": [
                 {"name": "OpenAI", "url": "https://openai.com/a"},
                 {"name": "The Verge", "url": "https://theverge.com/a"},

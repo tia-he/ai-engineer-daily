@@ -101,7 +101,6 @@ Examples:
 - Today's Brief
 - Concepts
 - Sources
-- Related News
 
 Tailwind:
 

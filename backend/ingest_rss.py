@@ -194,7 +194,6 @@ def assemble_article(entries: list[dict], ai_data: dict) -> dict:
         "takeaway": ai_data["takeaway"],
         "concepts": ai_data["concepts"],
         "background": ai_data["background"],
-        "related_news": [],
         "sources": [{"name": e["source_name"], "url": e["url"]} for e in entries],
         "published_at": max(published_dates) if published_dates else None,
         "image_url": image_url,

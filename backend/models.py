@@ -48,13 +48,6 @@ class Article(Base):
         default="",
     )
 
-    related_news: Mapped[list[dict[str, Any]]] = mapped_column(
-        "relatedNews",
-        JSON,
-        nullable=False,
-        default=list,
-    )
-
     sources: Mapped[list[dict[str, Any]]] = mapped_column(
         JSON,
         nullable=False,
@@ -98,7 +91,6 @@ class Article(Base):
             "takeaway": self.takeaway,
             "concepts": self.concepts,
             "background": self.background,
-            "relatedNews": self.related_news,
             "sources": self.sources,
             "publishedAt": (
                 self.published_at.isoformat() if self.published_at else None

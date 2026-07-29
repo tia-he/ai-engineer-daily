@@ -9,7 +9,6 @@ ARTICLE = {
     "takeaway": "This is the takeaway.",
     "concepts": ["Testing", "FastAPI"],
     "background": "Some background.",
-    "related_news": [],
     "sources": [{"name": "Example", "url": "https://example.com"}],
 }
 

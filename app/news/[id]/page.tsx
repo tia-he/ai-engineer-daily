@@ -111,10 +111,9 @@ export default async function NewsPage({ params }: NewsPageProps) {
             </Section>
           </div>
 
-          {/* Metadata rail: concepts, sources, and related reading sit beside
-              the body on wide screens instead of stacking beneath it, so
-              they read as reference material rather than more copy to get
-              through. */}
+          {/* Metadata rail: concepts and sources sit beside the body on wide
+              screens instead of stacking beneath it, so they read as
+              reference material rather than more copy to get through. */}
           <aside className="mt-12 lg:sticky lg:top-20 lg:mt-0">
             {article.concepts.length > 0 && (
               <Section
@@ -154,31 +153,6 @@ export default async function NewsPage({ params }: NewsPageProps) {
                 ))}
               </ul>
             </Section>
-
-            {article.relatedNews.length > 0 && (
-              <Section title="Related">
-                <div className="space-y-3">
-                  {article.relatedNews.map((item) => (
-                    <Link
-                      key={item.id}
-                      href={`/news/${item.id}`}
-                      className="group flex items-baseline justify-between gap-4 rounded-2xl border border-rule bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-                    >
-                      <span className="font-medium text-ink transition-colors group-hover:text-ink-muted">
-                        {item.title}
-                      </span>
-
-                      <span
-                        aria-hidden="true"
-                        className="shrink-0 text-ink-faint transition-transform duration-300 group-hover:translate-x-1"
-                      >
-                        →
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              </Section>
-            )}
           </aside>
         </div>
       </article>

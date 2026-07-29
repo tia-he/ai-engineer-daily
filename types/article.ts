@@ -3,11 +3,6 @@ export interface Source {
   url: string;
 }
 
-export interface RelatedNews {
-  id: string;
-  title: string;
-}
-
 export interface Article {
   id: string;
 
@@ -22,8 +17,6 @@ export interface Article {
   concepts: string[];
 
   background: string;
-
-  relatedNews: RelatedNews[];
 
   sources: Source[];
 

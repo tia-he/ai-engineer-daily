@@ -29,12 +29,6 @@ SEED_ARTICLES = [
             "understanding entire repositories instead of individual "
             "files."
         ),
-        "related_news": [
-            {
-                "id": "cursor-agent",
-                "title": "Cursor Launches AI Coding Agent",
-            }
-        ],
         "sources": [
             {
                 "name": "OpenAI",
@@ -65,7 +59,6 @@ SEED_ARTICLES = [
             "allows AI systems to interact with external tools and "
             "data sources."
         ),
-        "related_news": [],
         "sources": [
             {
                 "name": "Google Developers",
@@ -96,12 +89,6 @@ SEED_ARTICLES = [
             "autocomplete and beginning to perform multi-step coding "
             "tasks."
         ),
-        "related_news": [
-            {
-                "id": "openai-coding-model",
-                "title": "OpenAI Releases New Coding Model",
-            }
-        ],
         "sources": [
             {
                 "name": "Cursor",

@@ -52,7 +52,6 @@ describe("SearchPage", () => {
         takeaway: "",
         concepts: [],
         background: "",
-        relatedNews: [],
         sources: [],
         matchedIn: ["Title"],
       },
