@@ -1,4 +1,4 @@
-from sqlalchemy import String, cast, nulls_last, or_, select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.orm import Session
 
 from models import Article
@@ -22,14 +22,14 @@ def get_news(db: Session) -> list[dict]:
 
 def get_recent_news(db: Session, limit: int) -> list[dict]:
     """
-    首页"Today's Brief"用的查询：只取最近发布的 limit 篇。
+    首页"Today's Brief"用的查询：只取最近生成的 limit 篇。
 
-    按 published_at 降序，没有发布时间的（旧的 seed/测试数据）排到
-    最后——数量够的话会被自然挤出这个列表，不用手动清理旧数据。
+    按 created_at（我们系统真正合成/写入这篇文章的时间）降序，而不是
+    published_at（源博客自己的发布时间）——一篇原文发布得早、但今天
+    才被我们抓到并合成的文章，应该算"新"，不能因为源站发布时间早就
+    排到后面去。
     """
-    statement = (
-        select(Article).order_by(nulls_last(Article.published_at.desc())).limit(limit)
-    )
+    statement = select(Article).order_by(Article.created_at.desc()).limit(limit)
 
     articles = db.scalars(statement).all()
 

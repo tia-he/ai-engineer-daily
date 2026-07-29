@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, String, Text
+from sqlalchemy import JSON, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -73,6 +73,17 @@ class Article(Base):
         "imageUrl",
         String,
         nullable=True,
+    )
+
+    # 什么时候被我们的每日流程真正合成/发布的，不是源博客自己的发布
+    # 时间（那是 published_at）。首页"最近几条"要按这个排序——按
+    # published_at 排会把"今天刚合成、但原文是几天前发的"的文章排到
+    # 后面去，显示不出来。
+    created_at: Mapped[datetime] = mapped_column(
+        "createdAt",
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     def to_dict(self) -> dict[str, Any]:

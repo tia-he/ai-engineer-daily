@@ -42,3 +42,9 @@ def ensure_schema() -> None:
         conn.execute(
             text('ALTER TABLE news ADD COLUMN IF NOT EXISTS "imageUrl" VARCHAR')
         )
+        conn.execute(
+            text(
+                'ALTER TABLE news ADD COLUMN IF NOT EXISTS "createdAt" '
+                "TIMESTAMPTZ NOT NULL DEFAULT now()"
+            )
+        )

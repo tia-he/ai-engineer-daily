@@ -57,20 +57,32 @@ def test_to_dict_leaves_published_at_and_image_url_none_when_absent(db_session):
     assert article["imageUrl"] is None
 
 
-def test_get_recent_news_orders_newest_first_with_nulls_last(db_session):
-    crud.create_article(db_session, {**ARTICLE, "id": "no-date", "published_at": None})
+def test_get_recent_news_orders_by_created_at_not_published_at(db_session):
+    # Deliberately inverted: the article with the *earliest* published_at
+    # (the source blog's own date) is the one our pipeline generated most
+    # recently, and should still show up first on the homepage.
     crud.create_article(
         db_session,
-        {**ARTICLE, "id": "older", "published_at": datetime(2026, 1, 1, tzinfo=UTC)},
+        {
+            **ARTICLE,
+            "id": "old-source-new-brief",
+            "published_at": datetime(2020, 1, 1, tzinfo=UTC),
+            "created_at": datetime(2026, 7, 28, tzinfo=UTC),
+        },
     )
     crud.create_article(
         db_session,
-        {**ARTICLE, "id": "newer", "published_at": datetime(2026, 7, 1, tzinfo=UTC)},
+        {
+            **ARTICLE,
+            "id": "new-source-old-brief",
+            "published_at": datetime(2026, 7, 28, tzinfo=UTC),
+            "created_at": datetime(2026, 1, 1, tzinfo=UTC),
+        },
     )
 
     recent = crud.get_recent_news(db_session, limit=10)
 
-    assert [a["id"] for a in recent] == ["newer", "older", "no-date"]
+    assert [a["id"] for a in recent] == ["old-source-new-brief", "new-source-old-brief"]
 
 
 def test_get_recent_news_respects_limit(db_session):
