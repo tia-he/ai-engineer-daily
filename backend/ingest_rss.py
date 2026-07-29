@@ -5,6 +5,8 @@ import re
 from datetime import UTC, datetime
 
 import feedparser
+import httpx
+from bs4 import BeautifulSoup
 from sqlalchemy.orm import Session
 
 import crud
@@ -16,6 +18,13 @@ from openai_client import select_top_stories, synthesize_article
 logger = logging.getLogger(__name__)
 
 IMG_SRC_RE = re.compile(r'<img[^>]+src="([^"]+)"', re.IGNORECASE)
+
+PAGE_FETCH_TIMEOUT = 10.0
+
+# Below this, a "successful" fetch is more likely a cookie-consent wall or
+# an empty shell page than real article text — not worth preferring over
+# whatever the RSS feed already gave us.
+MIN_PAGE_TEXT_LENGTH = 200
 
 
 def make_article_id(key: str) -> str:
@@ -124,6 +133,50 @@ def fetch_candidates(feed: dict, used_urls: set[str]) -> list[dict]:
     return candidates
 
 
+def fetch_page_text(url: str) -> str | None:
+    """
+    尽量抓取原文网页本身的正文，通常比 RSS 摘要/全文字段丰富得多——
+    很多博客的 RSS 只放一小段导语，详细内容只在网页里。抓取失败
+    （网络、超时、404、被拒绝）或提取不到实质内容时返回 None，调用方
+    应该退回 RSS 自带的内容，而不是让整个流程失败。
+    """
+    try:
+        response = httpx.get(url, timeout=PAGE_FETCH_TIMEOUT, follow_redirects=True)
+        response.raise_for_status()
+    except Exception:
+        logger.warning("Failed to fetch article page: %s", url)
+        return None
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    for tag in soup(["script", "style", "nav", "header", "footer"]):
+        tag.decompose()
+
+    main = soup.find("article") or soup.find("main") or soup.body
+
+    if main is None:
+        return None
+
+    text = main.get_text(separator="\n", strip=True)
+
+    return text if len(text) >= MIN_PAGE_TEXT_LENGTH else None
+
+
+def enrich_with_page_text(entry: dict) -> dict:
+    """
+    只对当天真正入选精选的故事调用——不值得为每一个候选都抓一次网页。
+
+    抓取成功且比 RSS 提供的内容更详实时才替换 content，否则原样保留
+    entry，让 synthesize_article 退回 RSS 自带的内容。
+    """
+    page_text = fetch_page_text(entry["url"])
+
+    if page_text and len(page_text) > len(entry["content"]):
+        return {**entry, "content": page_text}
+
+    return entry
+
+
 def assemble_article(entries: list[dict], ai_data: dict) -> dict:
     """
     把一组候选故事（一到多个来源）加上 synthesize_article 生成的内容，
@@ -187,7 +240,7 @@ def build_daily_brief() -> None:
         published = 0
 
         for story in selection:
-            entries = [candidates[i] for i in story["indices"]]
+            entries = [enrich_with_page_text(candidates[i]) for i in story["indices"]]
             ai_data = synthesize_article(entries)
 
             if ai_data is None:

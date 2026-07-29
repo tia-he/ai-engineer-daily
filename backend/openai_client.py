@@ -31,22 +31,25 @@ SYNTHESIS_SYSTEM_PROMPT = (
     "You are writing one article for AI Engineer Daily, a briefing for "
     "software engineers on AI industry news. You will get one or more "
     "source excerpts about the same story: each has a source name, a "
-    "title, and a body. If there is more than one source, combine "
+    "title, and a body — often the full text of the source page, not "
+    "just a short teaser. If there is more than one source, combine "
     "them — keep every distinct, valuable detail, and drop only exact "
     "repetition. None of the output fields may be empty, even when a "
     "source body is just one or two sentences — write as much as that "
     "material honestly supports, never less than a real sentence per "
     "field. Respond with a JSON object with exactly these keys: "
     '"title" (a clear headline), "summary" (a 1-2 sentence teaser), '
-    '"content" (the article body: restate the source material as a '
-    "normal piece of prose — do not pad or invent detail beyond it, "
-    'but never leave it blank), "takeaway" (1-2 sentences on why this '
-    "matters to a software engineer — you may add reasonable editorial "
-    'interpretation here), "background" (1-3 sentences of context a '
-    "reader may need — you may draw on your own general knowledge of "
-    "the field for this one, even if the sources do not spell it out), "
-    'and "concepts" (a list of 2-5 short technical concept names). '
-    "Respond with JSON only."
+    '"content" (the article body: a normal, full-length news article '
+    "covering everything of substance the sources say — do not pad or "
+    "invent detail beyond them, but do not compress either; if the "
+    "sources are genuinely thin, a shorter article is the correct "
+    'output), "takeaway" (2-3 sentences on why this matters to a '
+    "software engineer — you may add reasonable editorial interpretation "
+    'here), "background" (2-4 sentences of context a reader may need — '
+    "you may draw on your own general knowledge of the field for this "
+    'one, even if the sources do not spell it out), and "concepts" '
+    "(a list of 2-5 short technical concept names). Respond with JSON "
+    "only."
 )
 
 

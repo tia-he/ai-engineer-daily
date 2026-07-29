@@ -1,13 +1,18 @@
 import time
 from datetime import UTC, datetime
+from types import SimpleNamespace
+
+import httpx
 
 import crud
 import ingest_rss
 from ingest_rss import (
     assemble_article,
     build_daily_brief,
+    enrich_with_page_text,
     extract_body,
     fetch_candidates,
+    fetch_page_text,
     get_used_source_urls,
     parse_image_url,
     parse_published_at,
@@ -87,6 +92,77 @@ def test_extract_body_falls_back_to_summary_when_content_is_blank():
     entry = {"summary": "A one-line teaser.", "content": [{"value": "   "}]}
 
     assert extract_body(entry) == "A one-line teaser."
+
+
+def fake_get(html: str):
+    """A stand-in for httpx.get() returning a 200 response with the given HTML."""
+
+    def get(url, timeout, follow_redirects):
+        return SimpleNamespace(text=html, raise_for_status=lambda: None)
+
+    return get
+
+
+def test_fetch_page_text_extracts_article_tag(monkeypatch):
+    html = (
+        "<html><body><nav>Menu</nav><article>"
+        + ("Real content. " * 30)
+        + "</article></body></html>"
+    )
+    monkeypatch.setattr(ingest_rss.httpx, "get", fake_get(html))
+
+    text = fetch_page_text("https://example.com/post")
+
+    assert text is not None
+    assert "Real content." in text
+    assert "Menu" not in text
+
+
+def test_fetch_page_text_returns_none_when_too_short(monkeypatch):
+    html = "<html><body><article>Too short.</article></body></html>"
+    monkeypatch.setattr(ingest_rss.httpx, "get", fake_get(html))
+
+    assert fetch_page_text("https://example.com/post") is None
+
+
+def test_fetch_page_text_returns_none_on_request_failure(monkeypatch):
+    def raise_error(url, timeout, follow_redirects):
+        raise httpx.ConnectError("boom")
+
+    monkeypatch.setattr(ingest_rss.httpx, "get", raise_error)
+
+    assert fetch_page_text("https://example.com/post") is None
+
+
+def test_enrich_with_page_text_replaces_content_when_richer(monkeypatch):
+    richer_text = "Full page detail. " * 30
+    monkeypatch.setattr(ingest_rss, "fetch_page_text", lambda url: richer_text)
+
+    entry = {"url": "https://example.com/post", "content": "Short RSS teaser."}
+    result = enrich_with_page_text(entry)
+
+    assert result["content"] == richer_text
+
+
+def test_enrich_with_page_text_keeps_original_when_fetch_fails(monkeypatch):
+    monkeypatch.setattr(ingest_rss, "fetch_page_text", lambda url: None)
+
+    entry = {"url": "https://example.com/post", "content": "Short RSS teaser."}
+    result = enrich_with_page_text(entry)
+
+    assert result["content"] == "Short RSS teaser."
+
+
+def test_enrich_with_page_text_keeps_original_when_page_text_is_shorter(monkeypatch):
+    monkeypatch.setattr(ingest_rss, "fetch_page_text", lambda url: "short")
+
+    entry = {
+        "url": "https://example.com/post",
+        "content": "A much longer RSS-provided teaser than the fetched page text.",
+    }
+    result = enrich_with_page_text(entry)
+
+    assert result["content"] == entry["content"]
 
 
 def test_get_used_source_urls_collects_every_source_across_articles(db_session):
