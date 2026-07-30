@@ -31,6 +31,25 @@ def test_parse_published_at_converts_struct_time_to_utc():
     assert result == datetime(2026, 7, 27, 12, 0, 0, tzinfo=UTC)
 
 
+def test_parse_published_at_falls_back_to_updated_parsed():
+    struct = time.struct_time((2026, 7, 28, 9, 0, 0, 0, 0, 0))
+
+    result = parse_published_at({"updated_parsed": struct})
+
+    assert result == datetime(2026, 7, 28, 9, 0, 0, tzinfo=UTC)
+
+
+def test_parse_published_at_prefers_published_over_updated():
+    published = time.struct_time((2026, 7, 27, 12, 0, 0, 0, 0, 0))
+    updated = time.struct_time((2026, 7, 28, 9, 0, 0, 0, 0, 0))
+
+    result = parse_published_at(
+        {"published_parsed": published, "updated_parsed": updated}
+    )
+
+    assert result == datetime(2026, 7, 27, 12, 0, 0, tzinfo=UTC)
+
+
 def test_parse_image_url_returns_none_without_any_image():
     assert parse_image_url({"summary": "<p>No image here.</p>"}) is None
 
@@ -97,7 +116,7 @@ def test_extract_body_falls_back_to_summary_when_content_is_blank():
 def fake_get(html: str):
     """A stand-in for httpx.get() returning a 200 response with the given HTML."""
 
-    def get(url, timeout, follow_redirects):
+    def get(url, **kwargs):
         return SimpleNamespace(text=html, raise_for_status=lambda: None)
 
     return get
@@ -118,6 +137,21 @@ def test_fetch_page_text_extracts_article_tag(monkeypatch):
     assert "Menu" not in text
 
 
+def test_fetch_page_text_sends_a_browser_user_agent(monkeypatch):
+    captured = {}
+
+    def get(url, **kwargs):
+        captured.update(kwargs)
+        html = "<article>" + ("Real content. " * 30) + "</article>"
+        return SimpleNamespace(text=html, raise_for_status=lambda: None)
+
+    monkeypatch.setattr(ingest_rss.httpx, "get", get)
+
+    fetch_page_text("https://example.com/post")
+
+    assert "Mozilla" in captured["headers"]["User-Agent"]
+
+
 def test_fetch_page_text_returns_none_when_too_short(monkeypatch):
     html = "<html><body><article>Too short.</article></body></html>"
     monkeypatch.setattr(ingest_rss.httpx, "get", fake_get(html))
@@ -126,10 +160,25 @@ def test_fetch_page_text_returns_none_when_too_short(monkeypatch):
 
 
 def test_fetch_page_text_returns_none_on_request_failure(monkeypatch):
-    def raise_error(url, timeout, follow_redirects):
+    def raise_error(url, **kwargs):
         raise httpx.ConnectError("boom")
 
     monkeypatch.setattr(ingest_rss.httpx, "get", raise_error)
+
+    assert fetch_page_text("https://example.com/post") is None
+
+
+def test_fetch_page_text_returns_none_on_http_error_status(monkeypatch):
+    def get(url, **kwargs):
+        request = httpx.Request("GET", url)
+        response = httpx.Response(403, request=request)
+
+        def raise_for_status():
+            raise httpx.HTTPStatusError("blocked", request=request, response=response)
+
+        return SimpleNamespace(raise_for_status=raise_for_status)
+
+    monkeypatch.setattr(ingest_rss.httpx, "get", get)
 
     assert fetch_page_text("https://example.com/post") is None
 

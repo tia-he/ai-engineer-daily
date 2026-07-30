@@ -26,6 +26,20 @@ PAGE_FETCH_TIMEOUT = 10.0
 # whatever the RSS feed already gave us.
 MIN_PAGE_TEXT_LENGTH = 200
 
+# Some sources (openai.com confirmed) reject the default httpx user agent
+# outright — a plain script-looking request gets a flat 403 before any HTML
+# is served. A realistic browser UA is a cheap, harmless thing to send that
+# resolves this for some anti-bot setups; it does not guarantee every source
+# will let us in (some block by request origin/IP rather than headers).
+PAGE_FETCH_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
 
 def make_article_id(key: str) -> str:
     """
@@ -39,11 +53,13 @@ def parse_published_at(entry) -> datetime | None:
     """
     从 feedparser entry 里取真实发布时间。
 
-    entry.published_parsed 是 feedparser 已经解析好的 UTC struct_time；
-    源没有提供发布时间（比如缺 pubDate）时它是 None，这里如实返回
-    None，不用抓取时间或今天的日期顶替。
+    优先用 published_parsed（RSS 的 pubDate / Atom 的 <published>）；
+    源没提供时退回 updated_parsed（Atom 的 <updated>，"最后更新时间"，
+    跟"发布时间"不完全是一回事，但对没有 <published> 的 feed 来说是
+    最接近的真实时间戳）。两个都没有时如实返回 None，不用抓取时间或
+    今天的日期顶替。
     """
-    parsed = entry.get("published_parsed")
+    parsed = entry.get("published_parsed") or entry.get("updated_parsed")
 
     if parsed is None:
         return None
@@ -139,12 +155,30 @@ def fetch_page_text(url: str) -> str | None:
     很多博客的 RSS 只放一小段导语，详细内容只在网页里。抓取失败
     （网络、超时、404、被拒绝）或提取不到实质内容时返回 None，调用方
     应该退回 RSS 自带的内容，而不是让整个流程失败。
+
+    每一步失败都单独记日志（状态码/异常/正文过短），因为"这次退回了
+    RSS 内容"本身不说明是哪一步失败的——不记录清楚，日后没法判断到底
+    是网络问题、源站拦截，还是页面结构提取不到正文。
     """
     try:
-        response = httpx.get(url, timeout=PAGE_FETCH_TIMEOUT, follow_redirects=True)
+        response = httpx.get(
+            url,
+            timeout=PAGE_FETCH_TIMEOUT,
+            follow_redirects=True,
+            headers=PAGE_FETCH_HEADERS,
+        )
         response.raise_for_status()
+    except httpx.HTTPStatusError as error:
+        logger.warning(
+            "Article page fetch got HTTP %d, falling back to RSS content: %s",
+            error.response.status_code,
+            url,
+        )
+        return None
     except Exception:
-        logger.warning("Failed to fetch article page: %s", url)
+        logger.warning(
+            "Article page fetch failed, falling back to RSS content: %s", url
+        )
         return None
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -155,11 +189,22 @@ def fetch_page_text(url: str) -> str | None:
     main = soup.find("article") or soup.find("main") or soup.body
 
     if main is None:
+        logger.warning("Article page has no article/main/body tag: %s", url)
         return None
 
     text = main.get_text(separator="\n", strip=True)
 
-    return text if len(text) >= MIN_PAGE_TEXT_LENGTH else None
+    if len(text) < MIN_PAGE_TEXT_LENGTH:
+        logger.warning(
+            "Article page text too short (%d chars < %d), falling back to RSS "
+            "content: %s",
+            len(text),
+            MIN_PAGE_TEXT_LENGTH,
+            url,
+        )
+        return None
+
+    return text
 
 
 def enrich_with_page_text(entry: dict) -> dict:
@@ -172,7 +217,22 @@ def enrich_with_page_text(entry: dict) -> dict:
     page_text = fetch_page_text(entry["url"])
 
     if page_text and len(page_text) > len(entry["content"]):
+        logger.info(
+            "Enriched content for %s: %d chars (RSS gave %d)",
+            entry["url"],
+            len(page_text),
+            len(entry["content"]),
+        )
         return {**entry, "content": page_text}
+
+    if page_text:
+        logger.info(
+            "Fetched page text for %s was not richer than RSS content "
+            "(%d vs %d chars); keeping RSS content",
+            entry["url"],
+            len(page_text),
+            len(entry["content"]),
+        )
 
     return entry
 
