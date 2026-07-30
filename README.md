@@ -16,7 +16,7 @@ An AI-powered news platform that automatically ingests AI news from trusted sour
 
 ```text
                   RSS Sources
-(OpenAI · Anthropic · Google AI · Hugging Face)
+(OpenAI · Google AI · Hugging Face · Mistral AI · DeepMind)
                          │
                          ▼
               GitHub Actions (Cron, daily)

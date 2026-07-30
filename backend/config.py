@@ -10,22 +10,32 @@ DATABASE_URL = (
 )
 
 # RSS 新闻源列表
+#
+# Anthropic 曾经在这里（news/rss.xml），但那个地址已经 404 了——他们的
+# /news 页面现在是纯前端渲染的 SPA，探测了常见路径/robots.txt/sitemap
+# 都找不到替代的 RSS 入口，看起来是彻底不提供 RSS 了，所以移除。
+# Google AI 的地址也曾经失效（跳转到一个不返回 RSS 内容的中间页），
+# 换成了它实际跳转到的、真正返回 RSS 的地址。
 RSS_FEEDS = [
     {
         "name": "OpenAI",
         "url": "https://openai.com/news/rss.xml",
     },
     {
-        "name": "Anthropic",
-        "url": "https://www.anthropic.com/news/rss.xml",
-    },
-    {
         "name": "Google AI",
-        "url": "https://blog.google/technology/ai/rss/",
+        "url": "https://blog.google/innovation-and-ai/technology/ai/rss/",
     },
     {
         "name": "Hugging Face",
         "url": "https://huggingface.co/blog/feed.xml",
+    },
+    {
+        "name": "Mistral AI",
+        "url": "https://mistral.ai/rss.xml",
+    },
+    {
+        "name": "DeepMind",
+        "url": "https://deepmind.google/blog/rss.xml",
     },
 ]
 

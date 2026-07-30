@@ -44,7 +44,8 @@ export default function RootLayout({
         <footer className="border-t border-rule">
           <div className="mx-auto w-full max-w-3xl px-6 py-8">
             <p className="font-mono text-xs uppercase tracking-[0.14em] text-ink-faint">
-              Ingested from OpenAI, Anthropic, Google AI, and Hugging Face
+              Ingested from OpenAI, Google AI, Hugging Face, Mistral AI, and
+              DeepMind
             </p>
           </div>
         </footer>
