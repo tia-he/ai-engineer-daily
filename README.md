@@ -105,7 +105,7 @@ backend/
 
 ## How It Works
 
-1. **Fetch** — `ingest_rss.py` pulls entries from every configured RSS feed, skipping any whose link is already used as a source on an existing article.
+1. **Fetch** — `ingest_rss.py` pulls entries from every configured RSS feed, skipping any whose link is already used as a source on an existing article, and any older than `CANDIDATE_FRESHNESS_DAYS` (7) — otherwise an entry nobody happened to pick can sit in the candidate pool indefinitely and resurface weeks later on a slow news day.
 2. **Select** — one OpenAI call groups that day's new entries by real-world story (multiple sources covering the same event become one group) and picks at most `MAX_DAILY_STORIES` (5) most significant — fewer is fine, it never pads the list.
 3. **Synthesize** — one OpenAI call per selected story combines all of its sources into a single article: a full, normal-length body deduped across sources (never padded or invented beyond what the sources say), plus a takeaway and background that are allowed more editorial latitude.
 4. **Schedule** — the whole pipeline runs once a day on a GitHub Actions cron, so the database stays fresh without a long-running worker.

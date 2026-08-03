@@ -2,7 +2,7 @@ import calendar
 import hashlib
 import logging
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import feedparser
 import httpx
@@ -25,6 +25,16 @@ PAGE_FETCH_TIMEOUT = 10.0
 # an empty shell page than real article text — not worth preferring over
 # whatever the RSS feed already gave us.
 MIN_PAGE_TEXT_LENGTH = 200
+
+# Only entries published/updated within this many days are eligible
+# candidates. Without this, get_used_source_urls's "already used" check is
+# the only gate on the pool: an entry that nobody happened to pick just sits
+# there and can resurface weeks or months later on a slow news day, dated
+# for whenever it originally ran — or a newly-added source's entire RSS
+# backlog floods in at once on its first run. Entries with no determinable
+# date are excluded too, since there's no way to confirm they're actually
+# fresh and letting them through indefinitely reintroduces the same problem.
+CANDIDATE_FRESHNESS_DAYS = 7
 
 # Some sources (openai.com confirmed) reject the default httpx user agent
 # outright — a plain script-looking request gets a flat 403 before any HTML
@@ -121,18 +131,25 @@ def extract_body(entry) -> str:
 
 def fetch_candidates(feed: dict, used_urls: set[str]) -> list[dict]:
     """
-    抓取单个 RSS 源，返回尚未被任何已发布文章引用过的候选故事。
+    抓取单个 RSS 源，返回尚未被任何已发布文章引用过、且发布时间在
+    CANDIDATE_FRESHNESS_DAYS 内的候选故事。
 
     这里只做解析，不写数据库——候选要先经过 select_top_stories 挑选，
     再由 synthesize_article 生成完整内容才会真正入库。
     """
     parsed = feedparser.parse(feed["url"])
     candidates = []
+    cutoff = datetime.now(UTC) - timedelta(days=CANDIDATE_FRESHNESS_DAYS)
 
     for entry in parsed.entries:
         link = entry.get("link")
 
         if not link or link in used_urls:
+            continue
+
+        published_at = parse_published_at(entry)
+
+        if published_at is None or published_at < cutoff:
             continue
 
         candidates.append(
@@ -141,7 +158,7 @@ def fetch_candidates(feed: dict, used_urls: set[str]) -> list[dict]:
                 "content": extract_body(entry),
                 "source_name": feed["name"],
                 "url": link,
-                "published_at": parse_published_at(entry),
+                "published_at": published_at,
                 "image_url": parse_image_url(entry),
             }
         )

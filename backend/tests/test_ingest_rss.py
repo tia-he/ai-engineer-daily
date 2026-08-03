@@ -1,5 +1,5 @@
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import httpx
@@ -252,10 +252,22 @@ def test_fetch_candidates_skips_entries_without_a_link(monkeypatch):
 
 
 def test_fetch_candidates_skips_already_used_urls(monkeypatch):
+    recent = time.gmtime()
+
     class FakeParsed:
         entries = [
-            {"title": "Seen", "link": "https://openai.com/seen", "summary": "s"},
-            {"title": "New", "link": "https://openai.com/new", "summary": "s"},
+            {
+                "title": "Seen",
+                "link": "https://openai.com/seen",
+                "summary": "s",
+                "published_parsed": recent,
+            },
+            {
+                "title": "New",
+                "link": "https://openai.com/new",
+                "summary": "s",
+                "published_parsed": recent,
+            },
         ]
 
     monkeypatch.setattr(ingest_rss.feedparser, "parse", lambda url: FakeParsed())
@@ -267,6 +279,69 @@ def test_fetch_candidates_skips_already_used_urls(monkeypatch):
 
     assert [c["url"] for c in candidates] == ["https://openai.com/new"]
     assert candidates[0]["source_name"] == "OpenAI"
+
+
+def test_fetch_candidates_skips_entries_older_than_the_freshness_window(monkeypatch):
+    stale = time.gmtime(
+        (
+            datetime.now(UTC) - timedelta(days=ingest_rss.CANDIDATE_FRESHNESS_DAYS + 1)
+        ).timestamp()
+    )
+
+    class FakeParsed:
+        entries = [
+            {
+                "title": "Old backlog post",
+                "link": "https://openai.com/old",
+                "summary": "s",
+                "published_parsed": stale,
+            }
+        ]
+
+    monkeypatch.setattr(ingest_rss.feedparser, "parse", lambda url: FakeParsed())
+
+    candidates = fetch_candidates(
+        {"name": "OpenAI", "url": "https://x"}, used_urls=set()
+    )
+
+    assert candidates == []
+
+
+def test_fetch_candidates_skips_entries_with_no_determinable_date(monkeypatch):
+    class FakeParsed:
+        entries = [
+            {"title": "No date", "link": "https://openai.com/no-date", "summary": "s"}
+        ]
+
+    monkeypatch.setattr(ingest_rss.feedparser, "parse", lambda url: FakeParsed())
+
+    candidates = fetch_candidates(
+        {"name": "OpenAI", "url": "https://x"}, used_urls=set()
+    )
+
+    assert candidates == []
+
+
+def test_fetch_candidates_keeps_entries_within_the_freshness_window(monkeypatch):
+    recent = time.gmtime((datetime.now(UTC) - timedelta(days=1)).timestamp())
+
+    class FakeParsed:
+        entries = [
+            {
+                "title": "Fresh post",
+                "link": "https://openai.com/fresh",
+                "summary": "s",
+                "published_parsed": recent,
+            }
+        ]
+
+    monkeypatch.setattr(ingest_rss.feedparser, "parse", lambda url: FakeParsed())
+
+    candidates = fetch_candidates(
+        {"name": "OpenAI", "url": "https://x"}, used_urls=set()
+    )
+
+    assert [c["url"] for c in candidates] == ["https://openai.com/fresh"]
 
 
 def test_assemble_article_combines_multiple_sources():
@@ -351,7 +426,14 @@ def test_build_daily_brief_publishes_selected_stories(db_session, monkeypatch):
 
     feeds_by_url = {
         "https://openai.com/rss": FakeParsed(
-            [{"title": "OpenAI story", "link": "https://openai.com/a", "summary": "s"}]
+            [
+                {
+                    "title": "OpenAI story",
+                    "link": "https://openai.com/a",
+                    "summary": "s",
+                    "published_parsed": time.gmtime(),
+                }
+            ]
         ),
     }
 
@@ -390,7 +472,14 @@ def test_build_daily_brief_publishes_selected_stories(db_session, monkeypatch):
 
 def test_build_daily_brief_does_nothing_when_selection_fails(db_session, monkeypatch):
     class FakeParsed:
-        entries = [{"title": "Story", "link": "https://openai.com/a", "summary": "s"}]
+        entries = [
+            {
+                "title": "Story",
+                "link": "https://openai.com/a",
+                "summary": "s",
+                "published_parsed": time.gmtime(),
+            }
+        ]
 
     monkeypatch.setattr(
         ingest_rss, "RSS_FEEDS", [{"name": "OpenAI", "url": "https://openai.com/rss"}]
